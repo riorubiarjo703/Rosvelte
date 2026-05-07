@@ -23,7 +23,7 @@
 >
 	<MmsSiteHeader />
 	<main
-		class="w-full pb-12 pt-6 md:mx-auto md:pb-16 md:pt-4 {dashboardHome
+		class="w-full pb-12 pt-12 md:mx-auto md:pb-16 md:pt-12 {dashboardHome
 			? 'max-w-[1600px] px-0 md:px-6'
 			: 'max-w-lg px-4 md:px-6'}"
 	>
