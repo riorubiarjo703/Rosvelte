@@ -1,7 +1,8 @@
 import { browser } from '$app/environment';
 import { catalogHeroImagePublicPath } from '$lib/catalog/hero-image-path';
 import type { MmsCollectionProduct } from '$lib/data/mms-collection-products';
-import { resolvedPath } from '$lib/paraglide/resolved-href';
+import type { Pathname } from '$app/types';
+import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 import { derived, writable } from 'svelte/store';
 
 const STORAGE_KEY = 'rosvelte-cart-v1';
@@ -81,7 +82,7 @@ export function resolveCartLineHeroImageHref(
 				? fromCatalog
 				: null;
 	const rel = catalogHeroImagePublicPath(uploadId);
-	return rel ? resolvedPath(rel) : null;
+	return rel ? resolvedLocalizedHref(rel as Pathname) : null;
 }
 
 /** Back-fill `heroImageUploadId` on lines that are missing it (persists to localStorage). */

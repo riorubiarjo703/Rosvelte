@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
 	import type { Pathname } from '$app/types';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import { JOURNAL_CATEGORY_TABS } from '$lib/data/mms-journal';
 
 	type FieldErrors = Partial<Record<string, string[] | undefined>>;

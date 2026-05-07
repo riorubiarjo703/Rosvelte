@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from 'bits-ui';
 	import { Label } from 'bits-ui';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 
 	let { data, form } = $props();
 

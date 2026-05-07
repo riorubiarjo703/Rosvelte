@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { Pathname } from '$app/types';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
 
 	let { data }: { data: PageData } = $props();

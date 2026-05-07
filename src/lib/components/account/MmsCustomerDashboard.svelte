@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { Pathname } from '$app/types';
 	import { resolve } from '$app/paths';
 	import type { User } from 'better-auth/types';
 	import type { MmsCollectionProduct } from '$lib/data/mms-collection-products';
@@ -8,7 +9,7 @@
 	import { removeWishlistProduct, wishlistEntries } from '$lib/wishlist/mms-wishlist';
 	import CollectionBottleArt from '$lib/components/collections/CollectionBottleArt.svelte';
 	import { catalogHeroImagePublicPath } from '$lib/catalog/hero-image-path';
-	import { resolvedPath } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import { Switch } from 'bits-ui';
 
 	type CustomerUser = User & {
@@ -77,7 +78,7 @@
 
 	function wishlistHeroHref(e: MmsWishlistEntry): string | null {
 		const rel = catalogHeroImagePublicPath(e.heroImageUploadId);
-		return rel ? resolvedPath(rel) : null;
+		return rel ? resolvedLocalizedHref(rel as Pathname) : null;
 	}
 
 	function splitName(full: string) {

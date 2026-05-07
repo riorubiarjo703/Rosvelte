@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Pathname } from '$app/types';
 	import { enhance } from '$app/forms';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 
 	let { title, onOpenMenu }: { title: string; onOpenMenu: () => void } = $props();
 

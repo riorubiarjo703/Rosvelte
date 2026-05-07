@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Pathname } from '$app/types';
 	import { enhance } from '$app/forms';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import { formatIdr } from '$lib/cart/mms-cart';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
 	import SuperstoreMiniBottle from '$lib/components/superstore/SuperstoreMiniBottle.svelte';

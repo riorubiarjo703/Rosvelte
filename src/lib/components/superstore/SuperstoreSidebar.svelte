@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Pathname } from '$app/types';
 	import { page } from '$app/state';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import type { User } from 'better-auth/types';
 	import { DEMO_KPIS } from '$lib/superstore/mms-admin-demo-data';
 	import { storeHeaderLogo } from '$lib/store/mms-store-settings';

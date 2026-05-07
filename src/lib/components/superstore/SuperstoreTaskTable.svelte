@@ -7,7 +7,7 @@
 	import { createTable, getCoreRowModel, createColumnHelper } from '@tanstack/table-core';
 	import type { Pathname } from '$app/types';
 	import { goto } from '$app/navigation';
-	import { resolvedPath } from '$lib/paraglide/resolved-href';
+	import { resolvedPath } from '$lib/paraglide-resolved-href';
 	import { page } from '$app/state';
 
 	let {

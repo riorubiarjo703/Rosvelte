@@ -1,0 +1,10 @@
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+# SvelteKit + adapter-netlify: publish must match adapter output (default: build).
+# https://svelte.dev/docs/kit/adapter-netlify
+
+[build]
+	command = "npm run build"
+	publish = "build"
+
+[build.environment]
+	NODE_VERSION = "22"

@@ -48,7 +48,7 @@
 			<h4 class="mb-5 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim">Company</h4>
 			<a
 				class="mb-2 block text-[0.78rem] text-mms-muted no-underline transition hover:text-mms-cream"
-				href={sectionHref('#story')}>About MMS</a>
+				href={resolve('/about')}>About MMS</a>
 			<a
 				class="mb-2 block text-[0.78rem] text-mms-muted no-underline transition hover:text-mms-cream"
 				href={sectionHref('#story')}>Our curators</a>

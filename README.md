@@ -1,152 +1,124 @@
 # RoSvelte
 
-**Maison MMS–style storefront** (“Maison de spiritueux”) built with **SvelteKit**, plus a **staff Superstore** area for catalogue, uploads, editorial journal, tasks, customer records, and export tooling.
+## 1. Module Overview
+- Module Name & Version: RoSvelte v0.0.1 (SvelteKit 2.x)
+- Core Purpose: Premium "Maison de spiritueux" storefront plus a staff Superstore admin for product, upload, journal, customer, and task operations.
+- Main Features:
+* Public storefront with curated brand pages and conversion flows (`/`, `/collections`, `/journal`, `/origins`, `/tasting-notes`, `/about`)
+* Customer account flows (signup/login/password reset) and dashboard via Better Auth customer stack
+* Staff Superstore with auth-gated CRUD, uploads, journal management, exports, and admin utilities
 
-## Framework & stack used to build this app
+## 2. Technical Structure
+### Dependencies
+- App/Core: `@sveltejs/kit`, `svelte`, `vite`, `typescript`
+- Styling/UI: `tailwindcss`, `@tailwindcss/forms`, `@tailwindcss/typography`, `bits-ui`, `tailwind-variants`, `clsx`
+- Data/Auth: `drizzle-orm`, `drizzle-kit`, `postgres`, `better-auth`, `zod`
+- Tooling: `eslint`, `prettier`, `vitest`, `playwright`, `storybook`, `mdsvex`, `@inlang/paraglide-js`
 
-| Layer | What we use |
-| --- | --- |
-| **App framework** | [**SvelteKit**](https://kit.svelte.dev/) **2** — file-based routing, `load`/`actions`, layouts, `+server` endpoints, SSR, and `hooks.server` for auth/i18n middleware. |
-| **UI framework** | [**Svelte**](https://svelte.dev/) **5** — components (runes API where applicable), client-side interactivity. |
-| **Language** | **TypeScript** (strict tooling via `svelte-check` + ESLint). |
-| **Build tool** | [**Vite**](https://vite.dev/) **8** — dev server, HMR, production bundling (`@sveltejs/vite-plugin-svelte`). |
-| **Deployment adapter** | **`@sveltejs/adapter-auto`** — picks an environment-specific adapter at build time (see SvelteKit adapters docs for production targets). |
-| **Runtime** | **Node.js** + **npm** (package manager); app code runs on the SvelteKit/Vite toolchain in dev and Node (or the adapter’s target) in production. |
+### Configuration
+- Environment setup: copy `.env.example` to `.env`
+- Key settings:
+  - `DATABASE_URL`
+  - `ORIGIN`, `BETTER_AUTH_URL`
+  - `BETTER_AUTH_SECRET`, optional `BETTER_AUTH_CUSTOMER_SECRET`
+  - `SUPERSTORE_ALLOWED_EMAILS`, `SUPERSTORE_ALLOW_ANY_AUTHENTICATED_USER`
+  - `SUPERSTORE_UPLOAD_DIR`, `SUPERSTORE_MAX_UPLOAD_MB`
+- Core config files:
+  - `svelte.config.js`
+  - `vite.config.ts`
+  - `drizzle.config.ts`
+  - `netlify.toml`
+  - `.nvmrc`
 
-Everything else (database, auth, CSS, tests) sits on top of that core; see the dependency table below.
+### Core Files
+- `src/routes/about/+page.svelte`: route entry for the new About page
+- `src/lib/components/about/MmsAboutPage.svelte`: full About experience migrated from provided HTML
+- `src/lib/components/site/MmsSiteCursor.svelte`: global custom cursor component mounted for all app pages (pointer-aware, interaction-scale states)
+- `src/lib/components/site/MmsSiteFooter.svelte`: footer links; `About MMS` now routes to `/about`
+- `src/lib/components/site/MmsSiteHeader.svelte`: shared public header/navigation
+- `src/routes/+layout.svelte`: shared root layout mounting cross-page UX elements (favicon sync, toasts/modals, site cursor)
+- `src/lib/paraglide-resolved-href.ts`: route/base helpers used by localized/internal link resolution
+- `src/routes/+layout.server.ts`: shared storefront/customer layout data
+- `src/lib/server/db/schema.ts`: app data model (catalog, journal, uploads, tasks, customer-related tables)
 
-## Implemented features
-
-### Public storefront (`/`)
-
-- **Landing page**: editorial layout (hero, stats, marquee, categories, featured products, tasting experience strip, newsletter) with intersection-based reveals.
-- **Shop / collections**: listing and product detail routes (`/collections`, `/collections/[id]`). Loads **published products from Postgres** (`catalog_product`); falls back to bundled static demo data when the DB is empty or unavailable.
-- **Origins & tasting**: dedicated experiences (`/origins`, `/tasting-notes`).
-- **Journal**: `/journal` — prefers **database posts** (`journal_post` via `src/lib/server/journal/repo.ts`); falls back to `src/lib/data/mms-journal.json`.
-- **Cart & wishlist**: client-side persistence (`cart/mms-cart.ts`, `wishlist/mms-wishlist.ts`), mini-cart, toast/modal UX.
-- **Global layout data**: logged-in customer and `catalogHeroImages` map for thumbnails (`src/routes/+layout.server.ts`).
-- **Document favicon sync** for PDP context (`src/lib/client/sync-document-favicon.ts`).
-- **i18n (Paraglide)**: English / Spanish locales; `lang` / `dir` injected from middleware (`src/hooks.server.ts`, `messages/*.json`).
-- **MDSvex**: available for markdown-in-Svelte where configured.
-
-### Customer accounts (`/account/*`)
-
-- **Separate Better Auth stack** bound to Postgres `customers` (+ `customer_*` tables): cookie prefix `rosvelte-customer`, API base **`/api/customer-auth`**.
-- **Flows**: signup, login, forgot password / reset (`customerAuth` callbacks; reset link **logged to server console** until email is wired).
-- **Dashboard**: richer profile/dashboard UI (`src/lib/components/account/MmsCustomerDashboard.svelte`).
-- **Extra profile fields**: e.g. birth date, phone, preferred language — stored via Better Auth `additionalFields` on the customer adapter.
-
-### Staff Superstore (`/superstore/*`)
-
-- **Staff Better Auth**: `users`/session tables, cookie prefix `rosvelte-staff`, API base **`/api/auth`** (`src/lib/server/auth.ts`).
-- **Access control**: `SUPERSTORE_ALLOWED_EMAILS` and optional `SUPERSTORE_ALLOW_ANY_AUTHENTICATED_USER`; enforced in `src/lib/server/superstore/access.ts` (403 if signed in but not allowlisted).
-- **Login & sign-out**: `/superstore/login`; layout logout posts to `/superstore` server action (`signOut`).
-
-#### Data-backed screens
-
-- **Catalogue CRUD**: list, create, edit products; hero + up to **four image slots** linked to uploads; optional rich **detail payload** (`detail_payload` JSON) for PDP.
-- **Exports**: `/superstore/products/export?format=json|csv|xlsx` (`src/routes/superstore/products/export/+server.ts`).
-- **File uploads**: staff uploads persisted on disk (`SUPERSTORE_UPLOAD_DIR`) + `superstore_upload` rows; catalogue references uploads (hero + `catalog_product_image`).
-- **Tasks**: CRUD task list backed by Drizzle **`task`** table, Zod (`src/lib/superstore/schemas.ts`) + TanStack-powered table UI.
-- **Superstore journal**: list + edit wired to **`journal_post`** (admin-facing).
-- **Customers (admin view)**: list + edit flows with validation (`customer-profile-validation`).
-
-#### UI shell with static/demo content
-
-Screens such as **Orders**, **Inventory**, **Analytics**, **Settings**, and parts of the **dashboard KPIs** use **`mms-admin-demo-data`** for labels and fixtures (placeholders until real backends exist).
-
-### Demos (`/demo/*`)
-
-- Paraglide sample, Better Auth demos, Playwright-backed demo page (`demo/playwright`).
-
----
-
-## Dependencies & tooling (beyond the core framework)
-
-| Area | Packages / services |
-| --- | --- |
-| Styling | **Tailwind CSS** v4 (`@tailwindcss/vite`), **@tailwindcss/forms**, **@tailwindcss/typography**, **tailwind-variants**, **clsx** |
-| UI primitives | **bits-ui**, **@internationalized/date** |
-| Data layer | **Drizzle ORM** + **drizzle-kit**; **postgres** (postgres.js client); **PostgreSQL** |
-| Auth | **better-auth**, **@better-auth/cli**; Drizzle adapter + **sveltekitCookies** |
-| Validation | **Zod** |
-| Spreadsheets | **xlsx** (catalog export) |
-| Data tables (admin) | **@tanstack/table-core** |
-| i18n | **Paraglide** (**@inlang/paraglide-js**), messages in `messages/*.json` |
-| Markdown in Svelte | **mdsvex** |
-| Quality & formatting | **Prettier** (+ Svelte / Tailwind plugins), **ESLint** (TypeScript + Svelte + Storybook presets) |
-| Testing | **Vitest**, **vitest-browser-svelte**, **@vitest/browser-playwright** / coverage; **Playwright**, **@playwright/test** |
-| Component docs | **Storybook** 10 (**@storybook/sveltekit**, a11y, docs, Vitest addon) |
-| Scripts / DX | **tsx**, **dotenv** |
-
----
-
-## Database & migrations
-
-Local Postgres via **`compose.yaml`** (optional `postgres` on `:5432`, DB `rosvelte`) or another connection string documented in `.env.example`.
-
-Typical bootstrap:
-
-```sh
-npm install
-# Set DATABASE_URL, ORIGIN, BETTER_AUTH_SECRET in .env (see .env.example)
-docker compose up -d   # or use your existing Postgres
-
-npm run db:push       # Drizzle pushes schema (Better Auth + app tables)
-
-npm run db:seed:catalog   # seeds catalogue from bundled demo payloads
-npm run db:seed:journal   # seeds journal_post from static journal data
+### Core Methods
+```ts
+export function resolvedLocalizedHref(path: Pathname): string
 ```
+- Converts a route pathname into a localized URL with app base and active locale.
 
-Other scripts: `db:generate`, `db:migrate`, `db:studio`, `auth:schema` (regenerate Better Auth Drizzle stubs).
-
----
-
-## Environment
-
-Copy **`.env.example`** → `.env`. Important variables:
-
-- **`DATABASE_URL`** — Postgres connection
-- **`ORIGIN`** / **`BETTER_AUTH_URL`** — browser origin for CSRF / callbacks (e.g. `http://rosvelte.test`)
-- **`BETTER_AUTH_SECRET`** (+ optional **`BETTER_AUTH_CUSTOMER_SECRET`**)
-- **Superstore**: `SUPERSTORE_ALLOWED_EMAILS`, `SUPERSTORE_ALLOW_ANY_AUTHENTICATED_USER`, `SUPERSTORE_UPLOAD_DIR`, `SUPERSTORE_MAX_UPLOAD_MB`
-
----
-
-## Development commands
-
-```sh
-npm run dev              # Vite dev server
-npm run dev:host        # binds using VITE_DEV_HOST (e.g. rosvelte.test)
-npm run build && npm run preview
-
-npm run check           # svelte-check
-npm run lint
-npm run test            # Vitest --run + Playwright
-
-npm run storybook       # port 6006
-npm run db:start        # docker compose up (postgres from compose.yaml)
+```ts
+export function resolvedPath(path: string): string
 ```
+- Applies app base path for internal links that are already localized or normalized.
 
----
-
-## Project pointers
-
-| Topic | Location |
-| --- | --- |
-| Staff / customer auth & hooks sequence | `src/lib/server/auth.ts`, `customer-auth.ts`, `src/hooks.server.ts` |
-| Drizzle tables (catalogue, uploads, journal, tasks) | `src/lib/server/db/schema.ts` (+ `auth.schema.ts`, `customer-auth.schema.ts`) |
-| Catalogue repo & slugging | `src/lib/server/catalog/` |
-| Journal repo | `src/lib/server/journal/` |
-| Superstore ACL | `src/lib/server/superstore/access.ts` |
-| Storefront data fallbacks | `src/lib/data/*` |
-
----
-
-## Recreating the CLI scaffolding
-
-Original `sv create` invocation (for reference only):
-
-```sh
-npx sv@0.15.2 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:auto" drizzle="database:postgresql+postgresql:postgres.js+docker:yes" better-auth="demo:password" mdsvex paraglide="languageTags:en, es+demo:yes" storybook mcp="ide:cursor+setup:local" --install npm RoSvelte
+```ts
+function sectionHref(hash: string): string
 ```
+- Shared footer behavior for section links on home vs non-home routes.
+
+### Integration Instructions
+- Install dependencies and run dev server:
+  - `npm install`
+  - `npm run dev`
+- Bootstrap database (local Docker optional):
+  - `docker compose up -d`
+  - `npm run db:push`
+  - `npm run db:seed:catalog`
+  - `npm run db:seed:journal`
+- Validate app quality gates:
+  - `npm run check`
+  - `npm run lint`
+  - `npm run test`
+- Netlify deployment baseline:
+  - Adapter: `@sveltejs/adapter-netlify` (`svelte.config.js`)
+  - Build config: `netlify.toml` with `command = "npm run build"` and `publish = "build"`
+  - Runtime: Node `22` (`.nvmrc` and `NODE_VERSION` in `netlify.toml`)
+  - Required production env vars in Netlify UI:
+    - `DATABASE_URL`
+    - `ORIGIN` and/or `BETTER_AUTH_URL` (must match deployed HTTPS origin)
+    - `BETTER_AUTH_SECRET`
+    - `BETTER_AUTH_CUSTOMER_SECRET` (or fallback to `BETTER_AUTH_SECRET`)
+    - `SUPERSTORE_ALLOWED_EMAILS`
+    - `SUPERSTORE_ALLOW_ANY_AUTHENTICATED_USER` (`false` for production)
+    - `SUPERSTORE_UPLOAD_DIR`, `SUPERSTORE_MAX_UPLOAD_MB`
+
+## 3. Implementation Details
+### Frontend
+- Public routes use SvelteKit file-based routing and shared `MmsSiteHeader` / `MmsSiteFooter` layout patterns.
+- About page implementation details:
+  - New page route: `src/routes/about/+page.svelte`
+  - Main content component: `src/lib/components/about/MmsAboutPage.svelte`
+  - Includes reveal animation observer, responsive sections, and CTA actions.
+- Global cursor interaction:
+  - Shared implementation: `src/lib/components/site/MmsSiteCursor.svelte`
+  - Mounted at root in `src/routes/+layout.svelte` so cursor behavior is consistent across all pages.
+  - Auto-disables on coarse pointers (touch devices) and scales on interactive elements.
+- Footer update:
+  - `About MMS` now links to `resolve('/about')` instead of in-page home anchor navigation.
+- Localized/internal route helper:
+  - `src/lib/paraglide-resolved-href.ts` is outside generated Paraglide output and should be used for stable imports (`resolvedLocalizedHref`, `resolvedPath`).
+
+### Admin
+- Superstore routes under `src/routes/superstore/*` are protected by staff auth and allowlist rules.
+- Primary admin capabilities:
+  - Product CRUD and detail payload editing
+  - Upload management and product image linking
+  - Journal edit flows
+  - Task management
+  - Product export (`json`, `csv`, `xlsx`)
+
+### Events/Plugins
+- SvelteKit integrations used as extension points:
+  - `src/hooks.server.ts`: request lifecycle middleware (auth/i18n/session context)
+  - `+layout.server.ts` and route `load` functions: data hydration boundaries
+  - route `actions` and `+server.ts`: write operations and API responses
+- Better Auth integrates through dedicated server modules for staff and customers.
+
+### Business Rules
+- Public storefront prioritizes DB-backed content with static fallback datasets where applicable.
+- Staff superstore access is restricted by configured email allowlist unless explicit override is enabled.
+- Upload metadata persists in DB while physical files are stored on disk path configured by environment.
+- About page is treated as a dedicated brand route (`/about`) and no longer relies on home-page section anchors for footer navigation.
+- Custom cursor UX is global (not page-scoped), with pointer-aware fallback for mobile/touch.
+- On serverless platforms (including Netlify Functions), local filesystem uploads are not durable across deployments; production upload strategy should move to object storage for persistence.

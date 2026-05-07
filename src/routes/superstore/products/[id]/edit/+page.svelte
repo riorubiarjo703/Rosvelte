@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Pathname } from '$app/types';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 
 	type CatalogFieldErrors = Partial<Record<string, string[] | undefined>>;
 

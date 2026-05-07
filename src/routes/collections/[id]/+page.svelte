@@ -11,8 +11,9 @@
 	import ProductDetailTabs from '$lib/components/product/ProductDetailTabs.svelte';
 	import ProductStickyBuyBar from '$lib/components/product/ProductStickyBuyBar.svelte';
 	import CollectionBottleArt from '$lib/components/collections/CollectionBottleArt.svelte';
+	import type { Pathname } from '$app/types';
 	import { catalogHeroImagePublicPath } from '$lib/catalog/hero-image-path';
-	import { resolvedPath } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import { toggleWishlistProduct, wishlistEntries } from '$lib/wishlist/mms-wishlist';
 
 	let { data } = $props();
@@ -30,7 +31,7 @@
 		galleryUploadIds
 			.map((id) => {
 				const rel = catalogHeroImagePublicPath(id);
-				return rel ? resolvedPath(rel) : '';
+				return rel ? resolvedLocalizedHref(rel as Pathname) : '';
 			})
 			.filter((s): s is string => s.length > 0)
 	);
@@ -44,7 +45,7 @@
 					: [];
 		const first = ids[0];
 		const rel = catalogHeroImagePublicPath(first);
-		return rel ? resolvedPath(rel) : null;
+		return rel ? resolvedLocalizedHref(rel as Pathname) : null;
 	}
 	const model = $derived(mmsBuildProductDetailModel(product, data.detailPayload));
 	const related = $derived(mmsRelatedProducts(product, 4, data.catalogProducts));

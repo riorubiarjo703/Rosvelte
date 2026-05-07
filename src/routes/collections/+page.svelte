@@ -18,15 +18,16 @@
 	} from '$lib/data/mms-site-nav';
 	import { addToCart } from '$lib/cart/mms-cart';
 	import { toggleWishlistProduct, wishlistEntries } from '$lib/wishlist/mms-wishlist';
+	import type { Pathname } from '$app/types';
 	import { catalogHeroImagePublicPath } from '$lib/catalog/hero-image-path';
-	import { resolvedPath } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 
 	let { data } = $props();
 	const catalogProducts = $derived(data.products);
 
 	function catalogHeroHref(p: MmsCollectionProduct) {
 		const rel = catalogHeroImagePublicPath(p.heroImageUploadId);
-		return rel ? resolvedPath(rel) : null;
+		return rel ? resolvedLocalizedHref(rel as Pathname) : null;
 	}
 
 	const tabs: { cat: MmsCollectionCategory; label: string }[] = [

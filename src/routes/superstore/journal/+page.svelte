@@ -2,7 +2,7 @@
 	import type { ActionData, PageData } from './$types';
 	import type { Pathname } from '$app/types';
 	import { enhance } from '$app/forms';
-	import { resolvedLocalizedHref } from '$lib/paraglide/resolved-href';
+	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
