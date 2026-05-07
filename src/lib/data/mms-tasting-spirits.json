@@ -1,0 +1,356 @@
+[
+  {
+    "id": 1,
+    "name": "Macallan 18 Sherry Oak",
+    "origin": "Scotland",
+    "region": "Speyside",
+    "cat": "scotch",
+    "style": "Single Malt Scotch",
+    "age": 18,
+    "abv": 43,
+    "price": 5800000,
+    "badge": "rare",
+    "scores": {
+      "nose": 97,
+      "palate": 96,
+      "finish": 95,
+      "balance": 96,
+      "complexity": 97
+    },
+    "overall": 96,
+    "color": "#3A1A08",
+    "nose": "Rich dried fruit, orange peel, cinnamon, dark chocolate and a whisper of aged oak. Extraordinary depth even before the first sip.",
+    "palate": "Full-bodied and sumptuously smooth. Layers of Christmas cake, ginger, vanilla cream and espresso unfold slowly across the tongue.",
+    "finish": "Exceptionally long. Warm sherry, toasted oak and a lingering sweetness that persists for several minutes.",
+    "verdict": "One of the most complete sherry-cask expressions ever bottled. The Macallan 18 is the benchmark against which all others are measured.",
+    "author": "James Whitfield, Head Curator",
+    "tags": [
+      "Sherry Cask",
+      "Speyside",
+      "Full-bodied",
+      "Dessert Dram",
+      "Collectors"
+    ],
+    "flavours": [
+      {
+        "l": "Fruit",
+        "v": 95
+      },
+      {
+        "l": "Oak",
+        "v": 82
+      },
+      {
+        "l": "Spice",
+        "v": 75
+      },
+      {
+        "l": "Smoke",
+        "v": 18
+      },
+      {
+        "l": "Floral",
+        "v": 40
+      },
+      {
+        "l": "Sweet",
+        "v": 88
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Laphroaig 18 Year",
+    "origin": "Scotland",
+    "region": "Islay",
+    "cat": "scotch",
+    "style": "Single Malt Scotch",
+    "age": 18,
+    "abv": 48,
+    "price": 2900000,
+    "badge": "",
+    "scores": {
+      "nose": 91,
+      "palate": 93,
+      "finish": 94,
+      "balance": 90,
+      "complexity": 92
+    },
+    "overall": 92,
+    "color": "#0D1F35",
+    "nose": "Intense medicinal peat, iodine and seaweed, with a surprising sweetness of vanilla hiding underneath.",
+    "palate": "Powerful, smoky and complex. Brine, tar and lemon zest, with a honeyed sweetness that tempers the smoke magnificently.",
+    "finish": "Long, warming and exceptionally smoky. Seaweed and sweet smoke linger for an astonishing duration.",
+    "verdict": "For lovers of Islay peat, the 18-year expression of Laphroaig reveals a dimension of sweetness and complexity that the younger editions only hint at.",
+    "author": "Oliver Park, Senior Curator",
+    "tags": [
+      "Peated",
+      "Islay",
+      "Coastal",
+      "Medicinal",
+      "Bold"
+    ],
+    "flavours": [
+      {
+        "l": "Smoke",
+        "v": 96
+      },
+      {
+        "l": "Brine",
+        "v": 88
+      },
+      {
+        "l": "Sweet",
+        "v": 52
+      },
+      {
+        "l": "Fruit",
+        "v": 30
+      },
+      {
+        "l": "Medicinal",
+        "v": 85
+      },
+      {
+        "l": "Oak",
+        "v": 60
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Rémy Martin XO",
+    "origin": "France",
+    "region": "Grande Champagne",
+    "cat": "cognac",
+    "style": "Cognac XO",
+    "age": 0,
+    "abv": 40,
+    "price": 3600000,
+    "badge": "exc",
+    "scores": {
+      "nose": 94,
+      "palate": 93,
+      "finish": 92,
+      "balance": 95,
+      "complexity": 93
+    },
+    "overall": 93,
+    "color": "#2A1828",
+    "nose": "Jasmine, rose, and fresh fig intertwine with toasted almond and a distant note of Havana cigar. Impossibly elegant.",
+    "palate": "Velvety and opulent. Candied orange, plum jam, warm oak and a touch of saffron. The mid-palate is extraordinary.",
+    "finish": "Silken and enduring. Dried apricot and vanilla persist, fading into a memory of white flowers.",
+    "verdict": "A benchmark XO that exemplifies everything the Grande Champagne terroir promises. Rémy's finest hour.",
+    "author": "Claire Dubois, French Spirits Curator",
+    "tags": [
+      "XO",
+      "Grande Champagne",
+      "Floral",
+      "Opulent",
+      "Elegant"
+    ],
+    "flavours": [
+      {
+        "l": "Floral",
+        "v": 90
+      },
+      {
+        "l": "Fruit",
+        "v": 85
+      },
+      {
+        "l": "Oak",
+        "v": 70
+      },
+      {
+        "l": "Sweet",
+        "v": 75
+      },
+      {
+        "l": "Spice",
+        "v": 55
+      },
+      {
+        "l": "Nutty",
+        "v": 72
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Yamazaki 12 Year",
+    "origin": "Japan",
+    "region": "Osaka",
+    "cat": "japanese",
+    "style": "Single Malt Japanese Whisky",
+    "age": 12,
+    "abv": 43,
+    "price": 2200000,
+    "badge": "",
+    "scores": {
+      "nose": 90,
+      "palate": 91,
+      "finish": 88,
+      "balance": 93,
+      "complexity": 90
+    },
+    "overall": 90,
+    "color": "#0E0E14",
+    "nose": "Delicate and precise. Tropical guava, peach, and subtle Mizunara oak spice, with a thread of vanilla and white flowers.",
+    "palate": "Silky light-to-medium body. Yuzu, soft honey, a hint of clove from the Japanese oak. Immaculately balanced.",
+    "finish": "Medium length, clean and refined. The oak spice lingers with dried citrus peel — elegant to the very last moment.",
+    "verdict": "The gateway expression that introduced the world to Japanese whisky. Years later, it remains one of the most perfectly balanced single malts in any category.",
+    "author": "Hana Mori, Asian Spirits Curator",
+    "tags": [
+      "Mizunara Oak",
+      "Japanese",
+      "Delicate",
+      "Balanced",
+      "Gateway"
+    ],
+    "flavours": [
+      {
+        "l": "Floral",
+        "v": 78
+      },
+      {
+        "l": "Fruit",
+        "v": 88
+      },
+      {
+        "l": "Oak",
+        "v": 65
+      },
+      {
+        "l": "Sweet",
+        "v": 72
+      },
+      {
+        "l": "Smoke",
+        "v": 15
+      },
+      {
+        "l": "Spice",
+        "v": 58
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Don Julio 1942",
+    "origin": "Mexico",
+    "region": "Jalisco",
+    "cat": "tequila",
+    "style": "Añejo Tequila",
+    "age": 0,
+    "abv": 38,
+    "price": 1800000,
+    "badge": "new",
+    "scores": {
+      "nose": 88,
+      "palate": 89,
+      "finish": 86,
+      "balance": 88,
+      "complexity": 87
+    },
+    "overall": 88,
+    "color": "#1E2A1A",
+    "nose": "Rich caramel, roasted agave and warm vanilla. Notes of dried mango and a subtle earthy mineral quality from the highland terroir.",
+    "palate": "Full and smooth for an añejo. Butterscotch, baking spice, roasted agave and oak. The alcohol is remarkably well-integrated.",
+    "finish": "Warm and medium-length. Sweet vanilla and toasted oak taper to a clean agave finish.",
+    "verdict": "The bottle that elevated tequila's prestige globally. Don Julio 1942 remains the gold standard of premium añejo — luxurious, sippable, and deeply satisfying.",
+    "author": "Lucia Reyes, Agave Spirits Curator",
+    "tags": [
+      "Añejo",
+      "Jalisco",
+      "Highland Agave",
+      "Premium",
+      "Smooth"
+    ],
+    "flavours": [
+      {
+        "l": "Agave",
+        "v": 85
+      },
+      {
+        "l": "Sweet",
+        "v": 88
+      },
+      {
+        "l": "Oak",
+        "v": 72
+      },
+      {
+        "l": "Fruit",
+        "v": 65
+      },
+      {
+        "l": "Earthy",
+        "v": 60
+      },
+      {
+        "l": "Spice",
+        "v": 55
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Diplomatico Reserva 12",
+    "origin": "Venezuela",
+    "region": "Andes",
+    "cat": "rum",
+    "style": "Aged Premium Rum",
+    "age": 12,
+    "abv": 40,
+    "price": 850000,
+    "badge": "",
+    "scores": {
+      "nose": 87,
+      "palate": 88,
+      "finish": 85,
+      "balance": 89,
+      "complexity": 86
+    },
+    "overall": 87,
+    "color": "#1A1008",
+    "nose": "Toffee, dried apricot and vanilla dominate, with a background of leather and aged oak. Sweetness is luxurious but never cloying.",
+    "palate": "Rich and dessert-like. Demerara sugar, chocolate truffle, orange peel and a whisper of tobacco. Pot-still character shines through.",
+    "finish": "Long and warming with a clean sweetness. Vanilla and dark toffee fade slowly into a trace of dried fruit.",
+    "verdict": "Venezuela's finest rum. Diplomatico Reserva Exclusiva demonstrates that aged rum can compete with the world's great spirits on every level.",
+    "author": "James Whitfield, Head Curator",
+    "tags": [
+      "Pot Still",
+      "Venezuela",
+      "Dessert",
+      "Rich",
+      "Tropical"
+    ],
+    "flavours": [
+      {
+        "l": "Sweet",
+        "v": 92
+      },
+      {
+        "l": "Fruit",
+        "v": 82
+      },
+      {
+        "l": "Oak",
+        "v": 68
+      },
+      {
+        "l": "Spice",
+        "v": 48
+      },
+      {
+        "l": "Floral",
+        "v": 42
+      },
+      {
+        "l": "Earthy",
+        "v": 38
+      }
+    ]
+  }
+]

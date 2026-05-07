@@ -1,0 +1,177 @@
+# Svelte Project — Cursor Rules
+
+## Project Context
+This is a Svelte project. Apply these rules to all `.svelte`, `.ts`, `.js`, and related config files.
+
+---
+
+## Code Style & Formatting
+
+- Use **2-space indentation** throughout all files.
+- Use **single quotes** for strings in JS/TS; double quotes in HTML attributes.
+- Always add a **trailing newline** at the end of files.
+- Keep lines under **100 characters** where possible.
+- Use **Prettier** formatting conventions — don't mix spacing styles.
+- Order `<script>`, markup, and `<style>` blocks in that sequence within `.svelte` files.
+- Use `<script lang="ts">` for all new components (TypeScript preferred).
+- Destructure props clearly at the top of the script block.
+
+```svelte
+<script lang="ts">
+  export let title: string;
+  export let count: number = 0;
+</script>
+```
+
+---
+
+## Architecture & Best Practices
+
+### Component Design
+- One component per file; keep components **small and focused**.
+- Prefer **composition over inheritance** — break large components into smaller ones.
+- Use **slots** for flexible, reusable layout components.
+- Avoid deeply nested component trees; lift state up when needed.
+
+### State Management
+- Use Svelte **stores** (`writable`, `readable`, `derived`) for shared state.
+- Keep store logic in a `/src/stores/` directory, one file per domain (e.g., `user.ts`, `cart.ts`).
+- Prefer `derived` stores over computing values inside components.
+- Use `$` prefix syntax for auto-subscriptions; never manually subscribe unless necessary.
+
+```ts
+// stores/counter.ts
+import { writable, derived } from 'svelte/store';
+
+export const count = writable(0);
+export const doubled = derived(count, ($count) => $count * 2);
+```
+
+### Routing (SvelteKit)
+- Use **SvelteKit file-based routing** under `/src/routes/`.
+- Use `+page.svelte`, `+layout.svelte`, `+page.ts`, and `+server.ts` conventions strictly.
+- Keep data loading in `load()` functions (`+page.ts` / `+page.server.ts`), not in component `onMount`.
+- Use `+error.svelte` for custom error pages per route segment.
+
+### Data Fetching
+- Fetch data server-side in `+page.server.ts` when dealing with sensitive data or SEO.
+- Use `fetch` inside `load()` — never inside component lifecycle hooks for initial data.
+- Handle loading and error states explicitly.
+
+### TypeScript
+- Enable strict mode in `tsconfig.json`.
+- Type all props, store values, and function signatures explicitly.
+- Avoid `any` — use `unknown` and narrow types properly.
+- Define shared types/interfaces in `/src/lib/types/`.
+
+### Reactivity
+- Use Svelte's `$:` reactive declarations for derived local values.
+- Avoid side effects inside reactive blocks unless intentional.
+- Prefer reactive statements over `onMount` for data that depends on props.
+
+```svelte
+$: fullName = `${firstName} ${lastName}`;
+```
+
+### Performance
+- Use `{#key}` blocks to force re-renders when needed, not arbitrary workarounds.
+- Lazy-load heavy components with `import()` and Svelte's dynamic imports.
+- Avoid unnecessary reactive declarations — only use `$:` when the value truly depends on reactive state.
+
+---
+
+## Testing
+
+- Write unit tests with **Vitest** for stores, utilities, and pure functions.
+- Write component tests with **@testing-library/svelte**.
+- Place test files alongside source files as `*.test.ts` or in a `/tests/` directory.
+- Aim for **>80% coverage** on stores and utility functions.
+- Test user interactions (clicks, inputs) not implementation details.
+
+```ts
+// counter.test.ts
+import { get } from 'svelte/store';
+import { count } from './counter';
+
+test('increments correctly', () => {
+  count.set(0);
+  count.update((n) => n + 1);
+  expect(get(count)).toBe(1);
+});
+```
+
+### E2E Testing
+- Use **Playwright** for end-to-end tests.
+- Store E2E tests in `/e2e/` directory.
+- Test critical user flows (auth, checkout, navigation) end-to-end.
+
+---
+
+## Documentation
+
+- Every component should have a brief comment block describing its purpose and props.
+- Document stores with JSDoc comments explaining the shape and intent.
+- Use `README.md` files in major directories (`/stores`, `/lib`, `/routes`) to describe conventions.
+- Keep a root `ARCHITECTURE.md` describing the folder structure and key decisions.
+
+```svelte
+<!--
+  @component UserCard
+  Displays a user's avatar, name, and role badge.
+
+  Props:
+  - name: string — Full display name
+  - role: 'admin' | 'user' — Determines badge color
+  - avatarUrl?: string — Optional profile image URL
+-->
+```
+
+---
+
+## File & Folder Structure
+
+```
+src/
+├── lib/
+│   ├── components/      # Reusable UI components
+│   ├── types/           # Shared TypeScript interfaces
+│   └── utils/           # Pure utility functions
+├── routes/              # SvelteKit pages and layouts
+├── stores/              # Svelte writable/derived stores
+└── app.html             # Root HTML shell
+```
+
+---
+
+## Naming Conventions
+
+| Thing            | Convention                  | Example                    |
+|------------------|-----------------------------|----------------------------|
+| Components       | PascalCase                  | `UserCard.svelte`          |
+| Stores           | camelCase                   | `userStore.ts`             |
+| Utility files    | camelCase                   | `formatDate.ts`            |
+| Route files      | SvelteKit conventions       | `+page.svelte`             |
+| CSS classes      | kebab-case                  | `.card-header`             |
+| TypeScript types | PascalCase                  | `UserProfile`              |
+| Constants        | SCREAMING_SNAKE_CASE        | `MAX_RETRIES`              |
+
+---
+
+## CSS & Styling
+
+- Use **scoped `<style>` blocks** in components by default — avoid global styles unless necessary.
+- Place truly global styles in `/src/app.css` only.
+- Use **CSS custom properties** (variables) for theming; define them in `:root`.
+- Prefer utility classes (Tailwind) or scoped styles — avoid inline `style=` attributes.
+- Keep animation/transition logic in Svelte transitions (`transition:`, `animate:`) rather than raw CSS keyframes where possible.
+
+---
+
+## Don'ts
+
+- ❌ Don't use `document` or `window` directly in components — gate with `browser` check from `$app/environment`.
+- ❌ Don't fetch data in `onMount` for initial page data — use `load()`.
+- ❌ Don't commit `.env` files — use `.env.example` with placeholder values.
+- ❌ Don't use `any` type in TypeScript.
+- ❌ Don't leave `console.log` statements in production code.
+- ❌ Don't use deprecated Svelte 4 APIs if on Svelte 5 (e.g., use runes `$state`, `$props` where applicable).

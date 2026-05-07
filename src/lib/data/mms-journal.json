@@ -1,0 +1,183 @@
+{
+  "featured": {
+    "catLabel": "Tasting Notes",
+    "title": "Inside the Macallan 30: A Masterclass in Sherry Maturation",
+    "excerpt": "Our head curator spends three evenings with one of the most celebrated expressions in Scotch history — unravelling layers of dried fruit, sandalwood, and four decades of time.",
+    "author": "James Whitfield",
+    "initials": "JW",
+    "date": "28 Apr 2025",
+    "read": "12 min",
+    "cat": "tasting"
+  },
+  "articles": [
+    {
+      "id": 1,
+      "cat": "tasting",
+      "catLabel": "Tasting Notes",
+      "title": "Inside the Macallan 30: A Masterclass in Sherry Maturation",
+      "excerpt": "Our head curator spends three evenings with one of the most celebrated expressions in Scotch history — unravelling layers of dried fruit, sandalwood, and four decades of time.",
+      "author": "James Whitfield",
+      "initials": "JW",
+      "date": "28 Apr 2025",
+      "read": "12 min",
+      "tags": [
+        "Scotch",
+        "Speyside",
+        "Macallan"
+      ],
+      "wide": true,
+      "featured": true
+    },
+    {
+      "id": 2,
+      "cat": "distillery",
+      "catLabel": "Distillery Visit",
+      "title": "Dawn at Yoichi: Inside Nikka's Northern Fortress",
+      "excerpt": "A winter visit to Hokkaido's most iconic distillery reveals a world where tradition and solitude shape every drop.",
+      "author": "Hana Mori",
+      "initials": "HM",
+      "date": "14 Apr 2025",
+      "read": "9 min",
+      "tags": [
+        "Japanese",
+        "Nikka"
+      ],
+      "wide": false
+    },
+    {
+      "id": 3,
+      "cat": "guide",
+      "catLabel": "Collector's Guide",
+      "title": "The 2025 Guide to Investing in Rare Scotch Whisky",
+      "excerpt": "As auction prices stabilise after years of volatility, our experts assess which bottles represent the finest long-term value.",
+      "author": "Oliver Park",
+      "initials": "OP",
+      "date": "7 Apr 2025",
+      "read": "15 min",
+      "tags": [
+        "Guide",
+        "Investment"
+      ],
+      "wide": false
+    },
+    {
+      "id": 4,
+      "cat": "history",
+      "catLabel": "Spirit History",
+      "title": "How Cognac Survived Two World Wars and a Phylloxera Crisis",
+      "excerpt": "The improbable survival story of France's most prestigious spirit — a tale of resilience, ingenuity, and family.",
+      "author": "Claire Dubois",
+      "initials": "CD",
+      "date": "2 Apr 2025",
+      "read": "11 min",
+      "tags": [
+        "Cognac",
+        "History"
+      ],
+      "wide": false
+    },
+    {
+      "id": 5,
+      "cat": "pairing",
+      "catLabel": "Pairing & Food",
+      "title": "The Art of Pairing Single Malt with Dark Chocolate",
+      "excerpt": "Not all combinations are equal. We conduct a methodical pairing across six malts and twelve chocolates to find the perfect unions.",
+      "author": "James Whitfield",
+      "initials": "JW",
+      "date": "25 Mar 2025",
+      "read": "8 min",
+      "tags": [
+        "Pairing",
+        "Scotch"
+      ],
+      "wide": false
+    },
+    {
+      "id": 6,
+      "cat": "howto",
+      "catLabel": "How It's Made",
+      "title": "Understanding Mezcal: From Agave Field to Bottle",
+      "excerpt": "The slow, ancient process of mezcal production — earthen pits, stone wheels, and the hands of a maestro mezcalero — explained.",
+      "author": "Lucia Reyes",
+      "initials": "LR",
+      "date": "18 Mar 2025",
+      "read": "10 min",
+      "tags": [
+        "Mezcal",
+        "Mexico"
+      ],
+      "wide": false
+    },
+    {
+      "id": 7,
+      "cat": "tasting",
+      "catLabel": "Tasting Notes",
+      "title": "Five Japanese Whiskies That Prove the Category Is Not a Fad",
+      "excerpt": "With age-stated expressions increasingly scarce, these five bottles — each from a different distillery — make the compelling case for Japanese whisky's enduring greatness.",
+      "author": "Hana Mori",
+      "initials": "HM",
+      "date": "11 Mar 2025",
+      "read": "13 min",
+      "tags": [
+        "Japanese",
+        "Tasting"
+      ],
+      "wide": false
+    },
+    {
+      "id": 8,
+      "cat": "distillery",
+      "catLabel": "Distillery Visit",
+      "title": "Laphroaig Through the Seasons: An Islay Year in Four Visits",
+      "excerpt": "We return to the same distillery in spring, summer, autumn, and winter — tracking how the same spirit smells, tastes, and feels across twelve months.",
+      "author": "Oliver Park",
+      "initials": "OP",
+      "date": "3 Mar 2025",
+      "read": "18 min",
+      "tags": [
+        "Scotch",
+        "Islay"
+      ],
+      "wide": false
+    }
+  ],
+  "popular": [
+    {
+      "title": "The Macallan 18 vs. 21: Which Deserves a Place in Your Collection?",
+      "cat": "Tasting",
+      "date": "Mar 2025"
+    },
+    {
+      "title": "10 Bottles Under Rp 1 Million That Will Impress Any Whisky Drinker",
+      "cat": "Guide",
+      "date": "Feb 2025"
+    },
+    {
+      "title": "Why Japanese Whisky Is Running Out — and What to Buy Before It Does",
+      "cat": "History",
+      "date": "Feb 2025"
+    },
+    {
+      "title": "The Beginner's Guide to Single Malt: Everything You Need to Know",
+      "cat": "Guide",
+      "date": "Jan 2025"
+    }
+  ],
+  "editorsPicks": [
+    {
+      "label": "Tasting · Featured",
+      "title": "Glenfarclas 25: The Sherry Bomb That Changed How I Think About Age",
+      "meta": "James Whitfield · 14 min"
+    },
+    {
+      "label": "Distillery · Scotland",
+      "title": "The Last Family-Owned Distilleries of Speyside",
+      "meta": "Oliver Park · 11 min"
+    },
+    {
+      "label": "History · France",
+      "title": "Armagnac Is Older Than Cognac — So Why Does No One Talk About It?",
+      "meta": "Claire Dubois · 9 min"
+    }
+  ]
+}

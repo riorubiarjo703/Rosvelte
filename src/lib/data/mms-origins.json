@@ -1,0 +1,1241 @@
+{
+  "scotland": {
+    "flag": "Scotland · United Kingdom",
+    "title": "The Highland & Islay Malts",
+    "titleEm": "Scotch",
+    "desc": "Scotland is the undisputed home of single malt whisky. From the peat-drenched shores of Islay to the gentle river valleys of Speyside, each region imparts an unmistakable character shaped by centuries of craft, cold Atlantic winds, and pure highland water.",
+    "tags": [
+      "Speyside",
+      "Islay",
+      "Highlands",
+      "Campbeltown",
+      "Lowlands"
+    ],
+    "bgColor": "#0D1F35",
+    "bgPattern": "scotland",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Speyside",
+        "type": "Highland Region",
+        "desc": "The heartland of Scotch. Home to more distilleries than any other region, producing whisky defined by orchard fruits, honey, and silky sherry notes.",
+        "meta": [
+          {
+            "v": "50+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "50–65",
+            "l": "ABV %"
+          },
+          {
+            "v": "12–25 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Islay",
+        "type": "Island Region",
+        "desc": "A small island with an outsized reputation. Islay malts are defined by medicinal peat smoke, brine, seaweed, and a ferocious maritime intensity.",
+        "meta": [
+          {
+            "v": "9",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–60",
+            "l": "ABV %"
+          },
+          {
+            "v": "10–18 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Highlands",
+        "type": "Mainland Region",
+        "desc": "The largest and most diverse whisky region. From fruity and floral to full-bodied and smoky, the Highlands defy easy categorisation.",
+        "meta": [
+          {
+            "v": "30+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–58",
+            "l": "ABV %"
+          },
+          {
+            "v": "10–21 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "GF",
+        "name": "Glenfarclas",
+        "origin": "Ballindalloch",
+        "type": "Single Malt",
+        "products": "4 expressions"
+      },
+      {
+        "init": "LP",
+        "name": "Laphroaig",
+        "origin": "Islay",
+        "type": "Single Malt",
+        "products": "3 expressions"
+      },
+      {
+        "init": "MC",
+        "name": "Macallan",
+        "origin": "Speyside",
+        "type": "Single Malt",
+        "products": "5 expressions"
+      },
+      {
+        "init": "BL",
+        "name": "Bruichladdich",
+        "origin": "Islay",
+        "type": "Single Malt",
+        "products": "2 expressions"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Peat & Smoke",
+        "v": 72
+      },
+      {
+        "l": "Fruit & Floral",
+        "v": 68
+      },
+      {
+        "l": "Sherry & Oak",
+        "v": 85
+      },
+      {
+        "l": "Coastal Brine",
+        "v": 60
+      },
+      {
+        "l": "Sweetness",
+        "v": 55
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Production Method",
+        "v": "Pot still distillation"
+      },
+      {
+        "l": "Maturation",
+        "v": "Oak casks, min. 3 years"
+      },
+      {
+        "l": "Water Source",
+        "v": "Highland springs"
+      },
+      {
+        "l": "Climate",
+        "v": "Cool, Atlantic maritime"
+      },
+      {
+        "l": "Barley",
+        "v": "Scottish & imported"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "14 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1494",
+        "event": "First written record of Scotch whisky",
+        "desc": "A Scottish Exchequer Roll references \"aqua vitae\" made by Friar John Cor — the earliest documented mention of Scotch."
+      },
+      {
+        "year": "1823",
+        "event": "Excise Act legalises distilling",
+        "desc": "The Act made legal distilling commercially viable and ended the era of illicit stills, ushering in the modern Scotch industry."
+      },
+      {
+        "year": "1915",
+        "event": "Minimum age requirement introduced",
+        "desc": "Scotch whisky must be aged a minimum of three years in oak — a rule that still defines the category today."
+      },
+      {
+        "year": "2009",
+        "event": "Scotch Whisky Regulations formalised",
+        "desc": "Five geographical categories — Single Malt, Single Grain, Blended Malt, Blended Grain, and Blended — receive legal protection."
+      }
+    ]
+  },
+  "france": {
+    "flag": "France · Western Europe",
+    "title": "Cognac & the Art of",
+    "titleEm": "Distillation",
+    "desc": "France elevates spirits to high art. The Charente region's Grande Champagne chalky soils produce eaux-de-vie of extraordinary delicacy, while the rugged hills of Gascony give Armagnac its wild, rustic soul. Two regions, two philosophies — both magnificent.",
+    "tags": [
+      "Grande Champagne",
+      "Petite Champagne",
+      "Borderies",
+      "Fins Bois",
+      "Gascony"
+    ],
+    "bgColor": "#2A1828",
+    "bgPattern": "france",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Grande Champagne",
+        "type": "Premier Cru Cognac",
+        "desc": "The most prized cognac terroir. Chalky limestone soils produce eaux-de-vie of exceptional finesse, floral elegance and extraordinary aging potential.",
+        "meta": [
+          {
+            "v": "15+",
+            "l": "Grandes Maisons"
+          },
+          {
+            "v": "40–45",
+            "l": "ABV %"
+          },
+          {
+            "v": "XO+",
+            "l": "Min. Age"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Gascony",
+        "type": "Armagnac Region",
+        "desc": "France's oldest brandy region. Armagnac is distilled once in a continuous still, preserving more of the raw grape character — earthy, rustic, wild.",
+        "meta": [
+          {
+            "v": "130+",
+            "l": "Producers"
+          },
+          {
+            "v": "40–48",
+            "l": "ABV %"
+          },
+          {
+            "v": "10–30 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Bordeaux",
+        "type": "Wine & Brandy",
+        "desc": "The world's most prestigious wine region also contributes rare aged brandies and a culture of terroir-driven production that permeates every bottle.",
+        "meta": [
+          {
+            "v": "60+",
+            "l": "Négociants"
+          },
+          {
+            "v": "40–42",
+            "l": "ABV %"
+          },
+          {
+            "v": "VSOP+",
+            "l": "Category"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "RM",
+        "name": "Rémy Martin",
+        "origin": "Grande Champagne",
+        "type": "Cognac",
+        "products": "3 expressions"
+      },
+      {
+        "init": "HN",
+        "name": "Hennessy",
+        "origin": "Cognac",
+        "type": "Cognac",
+        "products": "4 expressions"
+      },
+      {
+        "init": "AT",
+        "name": "Armagnac Tariquet",
+        "origin": "Gascony",
+        "type": "Armagnac",
+        "products": "2 expressions"
+      },
+      {
+        "init": "CM",
+        "name": "Château Montifaud",
+        "origin": "Petite Champagne",
+        "type": "Cognac",
+        "products": "2 expressions"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Floral & Jasmine",
+        "v": 80
+      },
+      {
+        "l": "Dried Fruit",
+        "v": 88
+      },
+      {
+        "l": "Vanilla & Oak",
+        "v": 75
+      },
+      {
+        "l": "Spice",
+        "v": 60
+      },
+      {
+        "l": "Nutty & Rancio",
+        "v": 70
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Production Method",
+        "v": "Charentais pot still"
+      },
+      {
+        "l": "Maturation",
+        "v": "French Limousin oak"
+      },
+      {
+        "l": "Grape Variety",
+        "v": "Ugni Blanc (Trebbiano)"
+      },
+      {
+        "l": "Climate",
+        "v": "Maritime & continental"
+      },
+      {
+        "l": "Minimum Age",
+        "v": "VS: 2yr · VSOP: 4yr · XO: 10yr"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "9 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1270",
+        "event": "Armagnac first distilled in Gascony",
+        "desc": "Gascon alchemists produce the first Armagnac, predating Cognac by centuries — making it France's oldest spirit."
+      },
+      {
+        "year": "1549",
+        "event": "Cognac trade begins with Dutch merchants",
+        "desc": "Dutch traders distill Charente wines to preserve them for export — \"brandewijn\" (burnt wine) gives brandy its name."
+      },
+      {
+        "year": "1817",
+        "event": "Hennessy invents the XO classification",
+        "desc": "Maurice Hennessy creates the term \"Extra Old\" to describe a special reserve blend — a classification still used globally."
+      },
+      {
+        "year": "1909",
+        "event": "Cognac appellation legally defined",
+        "desc": "French law delimits the six cognac crus, protecting the geographic origin of one of the world's most imitated spirits."
+      }
+    ]
+  },
+  "japan": {
+    "flag": "Japan · East Asia",
+    "title": "Precision and the",
+    "titleEm": "Art of Balance",
+    "desc": "Japanese whisky emerged from a desire to perfect Scottish traditions through the lens of Japanese craftsmanship — shokunin spirit applied to distillation. The result is a category defined by extraordinary balance, delicacy, and complexity that the world has come to revere.",
+    "tags": [
+      "Yamazaki",
+      "Yoichi",
+      "Miyagikyo",
+      "Hakushu",
+      "Mars Shinshu"
+    ],
+    "bgColor": "#0E0E14",
+    "bgPattern": "japan",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Yamazaki",
+        "type": "Osaka Prefecture",
+        "desc": "Japan's oldest distillery, nestled at the confluence of three rivers. Humid conditions and diverse cask types produce whisky of extraordinary complexity.",
+        "meta": [
+          {
+            "v": "1923",
+            "l": "Founded"
+          },
+          {
+            "v": "43–55",
+            "l": "ABV %"
+          },
+          {
+            "v": "12–25 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Yoichi",
+        "type": "Hokkaido",
+        "desc": "Set on the cold, rugged coast of Hokkaido, Yoichi produces Japan's most robust and peated whiskies — inspired by Masataka Taketsuru's training in Scotland.",
+        "meta": [
+          {
+            "v": "1934",
+            "l": "Founded"
+          },
+          {
+            "v": "45–55",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS–21 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Hakushu",
+        "type": "Yamanashi Prefecture",
+        "desc": "A \"forest distillery\" at 700m altitude in the Japanese Alps. Hakushu's whiskies are clean, herbal, and gently peated with a distinctive freshness.",
+        "meta": [
+          {
+            "v": "1973",
+            "l": "Founded"
+          },
+          {
+            "v": "43–48",
+            "l": "ABV %"
+          },
+          {
+            "v": "12–18 yr",
+            "l": "Age Range"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "ST",
+        "name": "Suntory",
+        "origin": "Osaka",
+        "type": "Japanese Malt",
+        "products": "4 expressions"
+      },
+      {
+        "init": "NK",
+        "name": "Nikka",
+        "origin": "Hokkaido",
+        "type": "Japanese Malt",
+        "products": "3 expressions"
+      },
+      {
+        "init": "KW",
+        "name": "Kawasaki",
+        "origin": "Kanagawa",
+        "type": "Japanese Grain",
+        "products": "1 expression"
+      },
+      {
+        "init": "MR",
+        "name": "Mars Whisky",
+        "origin": "Nagano",
+        "type": "Japanese Malt",
+        "products": "2 expressions"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Floral & Delicate",
+        "v": 90
+      },
+      {
+        "l": "Tropical Fruit",
+        "v": 78
+      },
+      {
+        "l": "Oak & Spice",
+        "v": 65
+      },
+      {
+        "l": "Gentle Smoke",
+        "v": 45
+      },
+      {
+        "l": "Umami & Depth",
+        "v": 72
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Production Method",
+        "v": "Pot & column stills"
+      },
+      {
+        "l": "Maturation",
+        "v": "American, Spanish & Mizunara oak"
+      },
+      {
+        "l": "Water Source",
+        "v": "Alpine springs"
+      },
+      {
+        "l": "Climate",
+        "v": "Humid, four distinct seasons"
+      },
+      {
+        "l": "Style",
+        "v": "Balance over intensity"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "8 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1923",
+        "event": "Yamazaki — Japan's first distillery",
+        "desc": "Shinjiro Torii founds Suntory's Yamazaki Distillery, beginning Japan's whisky journey. Masataka Taketsuru serves as head distiller."
+      },
+      {
+        "year": "1934",
+        "event": "Nikka's Yoichi Distillery established",
+        "desc": "Taketsuru returns to Hokkaido, founding Nikka and creating a second pillar of Japan's whisky heritage."
+      },
+      {
+        "year": "2001",
+        "event": "Nikka wins Best of the Best at IWSC",
+        "desc": "A landmark moment — Japan announces itself to the global whisky community. International accolades follow in rapid succession."
+      },
+      {
+        "year": "2015",
+        "event": "Japanese whisky shortage begins",
+        "desc": "Global demand surges beyond supply. Age-stated expressions become rare; NAS releases rise. Prices soar internationally."
+      }
+    ]
+  },
+  "mexico": {
+    "flag": "Mexico · North America",
+    "title": "Fire, Earth &",
+    "titleEm": "Agave",
+    "desc": "Mexico gives the world two of its most distinctive spirits — Tequila from the blue agave fields of Jalisco, and Mezcal from the ancient hand-crafted traditions of Oaxaca. Both are expressions of terroir as profound as any wine or whisky.",
+    "tags": [
+      "Jalisco",
+      "Oaxaca",
+      "Guerrero",
+      "Michoacán",
+      "Durango"
+    ],
+    "bgColor": "#161B0E",
+    "bgPattern": "mexico",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Jalisco",
+        "type": "Tequila Heartland",
+        "desc": "The volcanic lowlands and highland valleys around Guadalajara define tequila. Blue Weber agave grown in red volcanic soil produces spirits of remarkable range.",
+        "meta": [
+          {
+            "v": "150+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "35–55",
+            "l": "ABV %"
+          },
+          {
+            "v": "Blanco–Extra Añejo",
+            "l": "Categories"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Oaxaca",
+        "type": "Mezcal Origin",
+        "desc": "Mezcal's ancient homeland. Over 30 agave varieties are used by maestros mezcaleros, roasted in earthen pits to produce smoky, complex spirits of breathtaking variety.",
+        "meta": [
+          {
+            "v": "600+",
+            "l": "Producers"
+          },
+          {
+            "v": "40–55",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS",
+            "l": "Typically"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Guerrero",
+        "type": "Raicilla & Mezcal",
+        "desc": "An emerging region producing Raicilla — a lesser-known agave spirit of wild, coastal character. Guerrero distillers are among Mexico's most experimental.",
+        "meta": [
+          {
+            "v": "40+",
+            "l": "Producers"
+          },
+          {
+            "v": "40–50",
+            "l": "ABV %"
+          },
+          {
+            "v": "Artisanal",
+            "l": "Classification"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "DJ",
+        "name": "Don Julio",
+        "origin": "Jalisco",
+        "type": "Tequila",
+        "products": "3 expressions"
+      },
+      {
+        "init": "ES",
+        "name": "El Silencio",
+        "origin": "Oaxaca",
+        "type": "Mezcal",
+        "products": "2 expressions"
+      },
+      {
+        "init": "PA",
+        "name": "Patrón",
+        "origin": "Jalisco",
+        "type": "Tequila",
+        "products": "2 expressions"
+      },
+      {
+        "init": "DV",
+        "name": "Del Maguey",
+        "origin": "Oaxaca",
+        "type": "Single Village Mezcal",
+        "products": "2 expressions"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Smoke & Earth",
+        "v": 75
+      },
+      {
+        "l": "Agave & Vegetal",
+        "v": 88
+      },
+      {
+        "l": "Citrus & Pepper",
+        "v": 70
+      },
+      {
+        "l": "Caramel & Vanilla",
+        "v": 65
+      },
+      {
+        "l": "Mineral & Flint",
+        "v": 60
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Primary Spirit",
+        "v": "Tequila & Mezcal"
+      },
+      {
+        "l": "Agave",
+        "v": "Blue Weber (Tequila) · 30+ varieties (Mezcal)"
+      },
+      {
+        "l": "Roasting",
+        "v": "Oven (Tequila) · Earthen pit (Mezcal)"
+      },
+      {
+        "l": "Water Source",
+        "v": "Volcanic aquifers"
+      },
+      {
+        "l": "Climate",
+        "v": "Semi-arid highland & tropical coastal"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "7 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1400s",
+        "event": "Aztecs ferment agave — pulque",
+        "desc": "Indigenous Mexicans ferment the sap of the maguey agave to create pulque, a sacred ritual drink long before distillation arrived."
+      },
+      {
+        "year": "1500s",
+        "event": "Spanish introduce distillation",
+        "desc": "Spanish conquistadors introduce copper pot stills, leading to the first distilled agave spirits — the precursor to mezcal and tequila."
+      },
+      {
+        "year": "1795",
+        "event": "Jose Cuervo receives first tequila licence",
+        "desc": "The Royal Governor of New Galicia grants Jose Cuervo the first licence to commercially produce tequila — an industry is born."
+      },
+      {
+        "year": "1994",
+        "event": "Tequila denomination formalised",
+        "desc": "The Denomination of Origin for Tequila restricts production to Jalisco and parts of four other states, protecting the category globally."
+      }
+    ]
+  },
+  "ireland": {
+    "flag": "Ireland · Western Europe",
+    "title": "Triple Distilled &",
+    "titleEm": "Smooth",
+    "desc": "Ireland's whiskey tradition is the world's oldest, with a style defined by triple distillation in large copper pot stills, producing spirits of exceptional smoothness, lightness, and a characteristic honeyed sweetness that sets them apart from all others.",
+    "tags": [
+      "Dublin",
+      "Cork",
+      "Antrim",
+      "Cooley",
+      "Waterford"
+    ],
+    "bgColor": "#0D1A10",
+    "bgPattern": "ireland",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Dublin",
+        "type": "Pot Still Heartland",
+        "desc": "The historic home of Irish whiskey, where Jameson and Teeling carry the city's tradition of smooth, approachable pot still expressions.",
+        "meta": [
+          {
+            "v": "5",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–46",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS–21 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Cork",
+        "type": "Southern Ireland",
+        "desc": "Midleton Distillery, the world's largest pot still producer, crafts Jameson, Redbreast, and Green Spot — the cornerstones of the Irish style.",
+        "meta": [
+          {
+            "v": "1",
+            "l": "Major Distillery"
+          },
+          {
+            "v": "40–46",
+            "l": "ABV %"
+          },
+          {
+            "v": "12–21 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Cooley Peninsula",
+        "type": "County Louth",
+        "desc": "Ireland's first independent distillery, founded in 1987. Cooley brought diversity back to Irish whiskey with peated expressions and single malts.",
+        "meta": [
+          {
+            "v": "1987",
+            "l": "Founded"
+          },
+          {
+            "v": "40–55",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS–15 yr",
+            "l": "Age Range"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "RB",
+        "name": "Redbreast",
+        "origin": "Midleton",
+        "type": "Single Pot Still",
+        "products": "3 expressions"
+      },
+      {
+        "init": "GS",
+        "name": "Green Spot",
+        "origin": "Midleton",
+        "type": "Single Pot Still",
+        "products": "2 expressions"
+      },
+      {
+        "init": "TL",
+        "name": "Teeling",
+        "origin": "Dublin",
+        "type": "Single Malt",
+        "products": "2 expressions"
+      },
+      {
+        "init": "KN",
+        "name": "Knappogue",
+        "origin": "Co. Clare",
+        "type": "Single Malt",
+        "products": "1 expression"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Honey & Malt",
+        "v": 85
+      },
+      {
+        "l": "Orchard Fruit",
+        "v": 78
+      },
+      {
+        "l": "Vanilla & Cream",
+        "v": 80
+      },
+      {
+        "l": "Spice & Pepper",
+        "v": 55
+      },
+      {
+        "l": "Toasted Oak",
+        "v": 62
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Distillation",
+        "v": "Triple distilled (typically)"
+      },
+      {
+        "l": "Maturation",
+        "v": "American & Oloroso sherry casks"
+      },
+      {
+        "l": "Grain",
+        "v": "Malted & unmalted barley"
+      },
+      {
+        "l": "Climate",
+        "v": "Cool, Atlantic oceanic"
+      },
+      {
+        "l": "Style",
+        "v": "Smooth, light, approachable"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "5 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1405",
+        "event": "First recorded Irish whiskey distillation",
+        "desc": "The Annals of Clonmacnoise record the death of a chieftain from \"taking a surfeit of aqua vitae\" — the first written Irish whiskey reference."
+      },
+      {
+        "year": "1757",
+        "event": "Midleton Distillery founded",
+        "desc": "The Old Midleton Distillery is established in Cork — later to become the spiritual home of Irish pot still whiskey."
+      },
+      {
+        "year": "1966",
+        "event": "Irish Distillers formed",
+        "desc": "The great consolidation. Jameson, Powers, and Cork Distilleries merge, preserving Irish whiskey during its most challenging period."
+      },
+      {
+        "year": "2015",
+        "event": "Irish whiskey renaissance",
+        "desc": "Over 30 new distilleries open across Ireland, reversing a century of decline. Irish whiskey becomes the world's fastest-growing spirit category."
+      }
+    ]
+  },
+  "caribbean": {
+    "flag": "Caribbean · West Indies",
+    "title": "Sun-Kissed &",
+    "titleEm": "Complex Rum",
+    "desc": "The Caribbean archipelago is the cradle of rum. From the full-bodied pot-still rums of Jamaica to the lighter column-still rums of Barbados and the sugarcane paradise of Martinique, the islands offer a diversity of styles unlike any other spirit category.",
+    "tags": [
+      "Jamaica",
+      "Barbados",
+      "Martinique",
+      "Trinidad",
+      "Guyana"
+    ],
+    "bgColor": "#1A1008",
+    "bgPattern": "caribbean",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Jamaica",
+        "type": "Full-Bodied Rum",
+        "desc": "Jamaica's rums are the most characterful in the world — high-ester, funky pot-still spirits from venerable houses like Appleton and Hampden.",
+        "meta": [
+          {
+            "v": "6",
+            "l": "Major Distilleries"
+          },
+          {
+            "v": "40–63",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS–21 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Martinique",
+        "type": "Rhum Agricole AOC",
+        "desc": "The only rum with a Protected Designation of Origin. Made from fresh sugarcane juice rather than molasses, Martinique's Rhum Agricole has a grassy, vegetal terroir.",
+        "meta": [
+          {
+            "v": "8",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–62",
+            "l": "ABV %"
+          },
+          {
+            "v": "NAS–15 yr",
+            "l": "Age Range"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Barbados",
+        "type": "Elegant Column Still",
+        "desc": "The birthplace of rum. Barbados produces lighter, refined expressions — most notably Mount Gay and Foursquare, celebrated for their elegant oak integration.",
+        "meta": [
+          {
+            "v": "3",
+            "l": "Major Distilleries"
+          },
+          {
+            "v": "40–60",
+            "l": "ABV %"
+          },
+          {
+            "v": "5–30 yr",
+            "l": "Age Range"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "DP",
+        "name": "Diplomatico",
+        "origin": "Venezuela",
+        "type": "Rum",
+        "products": "2 expressions"
+      },
+      {
+        "init": "AP",
+        "name": "Appleton Estate",
+        "origin": "Jamaica",
+        "type": "Rum",
+        "products": "2 expressions"
+      },
+      {
+        "init": "FS",
+        "name": "Foursquare",
+        "origin": "Barbados",
+        "type": "Rum",
+        "products": "2 expressions"
+      },
+      {
+        "init": "HE",
+        "name": "Hampden Estate",
+        "origin": "Jamaica",
+        "type": "Rum",
+        "products": "1 expression"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Tropical Fruit",
+        "v": 88
+      },
+      {
+        "l": "Molasses & Funk",
+        "v": 75
+      },
+      {
+        "l": "Vanilla & Caramel",
+        "v": 80
+      },
+      {
+        "l": "Banana & Ester",
+        "v": 70
+      },
+      {
+        "l": "Spice & Pepper",
+        "v": 65
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Raw Material",
+        "v": "Molasses or fresh cane juice"
+      },
+      {
+        "l": "Distillation",
+        "v": "Pot still, column or both"
+      },
+      {
+        "l": "Maturation",
+        "v": "American white oak, tropical aging"
+      },
+      {
+        "l": "Climate",
+        "v": "Hot, humid tropical"
+      },
+      {
+        "l": "Aging Note",
+        "v": "1 yr Caribbean ≈ 3 yr Scotland"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "5 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1620s",
+        "event": "Rum first distilled in Barbados",
+        "desc": "Plantation slaves in Barbados discover that molasses, a byproduct of sugar production, can be fermented and distilled into a potent spirit."
+      },
+      {
+        "year": "1703",
+        "event": "Mount Gay Distillery established",
+        "desc": "The oldest continually operating rum distillery in the world is founded in Barbados — its production records survive to this day."
+      },
+      {
+        "year": "1800s",
+        "event": "Rhum Agricole developed in Martinique",
+        "desc": "French colonists in Martinique begin distilling fresh cane juice rather than molasses — creating a completely different, greener style of rum."
+      },
+      {
+        "year": "1996",
+        "event": "Martinique AOC granted",
+        "desc": "Martinique Rhum Agricole receives its Appellation d'Origine Contrôlée — the only rum in the world with this protected French designation."
+      }
+    ]
+  },
+  "usa": {
+    "flag": "USA · North America",
+    "title": "Bourbon & the",
+    "titleEm": "American Oak",
+    "desc": "The United States gave the world Bourbon — a spirit so tied to its homeland that by law it can only be called Bourbon if made in America. The charred new oak barrels, the rich corn mash, and Kentucky's limestone-filtered water produce a distinctly American vision of whiskey.",
+    "tags": [
+      "Kentucky",
+      "Tennessee",
+      "New York",
+      "Texas",
+      "Indiana"
+    ],
+    "bgColor": "#1A0F08",
+    "bgPattern": "usa",
+    "regions": [
+      {
+        "num": "01",
+        "name": "Kentucky",
+        "type": "Bourbon Capital",
+        "desc": "95% of the world's Bourbon is aged in Kentucky. The state's climate — hot summers, cold winters — forces whiskey in and out of the charred barrel wood, extracting rich flavour rapidly.",
+        "meta": [
+          {
+            "v": "90+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–67.5",
+            "l": "ABV %"
+          },
+          {
+            "v": "4–23 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      },
+      {
+        "num": "02",
+        "name": "Tennessee",
+        "type": "Charcoal Mellowed",
+        "desc": "Tennessee whiskey takes one extra step: the Lincoln County Process filters new-make spirit through sugar maple charcoal before barrel entry, producing a distinctly mellow character.",
+        "meta": [
+          {
+            "v": "20+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–50",
+            "l": "ABV %"
+          },
+          {
+            "v": "4–10 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      },
+      {
+        "num": "03",
+        "name": "Texas",
+        "type": "Craft Frontier",
+        "desc": "Texas's extreme heat accelerates maturation dramatically. What takes Kentucky 10 years, Texas achieves in 3 — producing bold, oak-forward expressions with a frontier spirit.",
+        "meta": [
+          {
+            "v": "75+",
+            "l": "Distilleries"
+          },
+          {
+            "v": "40–60",
+            "l": "ABV %"
+          },
+          {
+            "v": "2–8 yr",
+            "l": "Avg. Age"
+          }
+        ]
+      }
+    ],
+    "brands": [
+      {
+        "init": "BT",
+        "name": "Buffalo Trace",
+        "origin": "Kentucky",
+        "type": "Bourbon",
+        "products": "2 expressions"
+      },
+      {
+        "init": "WL",
+        "name": "Weller",
+        "origin": "Kentucky",
+        "type": "Wheated Bourbon",
+        "products": "2 expressions"
+      },
+      {
+        "init": "WT",
+        "name": "Wild Turkey",
+        "origin": "Kentucky",
+        "type": "Bourbon",
+        "products": "2 expressions"
+      },
+      {
+        "init": "MK",
+        "name": "Maker's Mark",
+        "origin": "Kentucky",
+        "type": "Bourbon",
+        "products": "1 expression"
+      }
+    ],
+    "flavours": [
+      {
+        "l": "Vanilla & Caramel",
+        "v": 92
+      },
+      {
+        "l": "Corn Sweetness",
+        "v": 85
+      },
+      {
+        "l": "Charred Oak",
+        "v": 80
+      },
+      {
+        "l": "Spice & Rye",
+        "v": 68
+      },
+      {
+        "l": "Dark Fruit",
+        "v": 55
+      }
+    ],
+    "distInfo": [
+      {
+        "l": "Mash Bill",
+        "v": "Min. 51% corn"
+      },
+      {
+        "l": "Distillation",
+        "v": "Column & pot still (doubler)"
+      },
+      {
+        "l": "New Oak",
+        "v": "New charred American white oak only"
+      },
+      {
+        "l": "Entry Proof",
+        "v": "Max. 125 proof (62.5% ABV)"
+      },
+      {
+        "l": "Climate",
+        "v": "Continental — hot summers, cold winters"
+      },
+      {
+        "l": "MMS Labels",
+        "v": "4 expressions"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "1776",
+        "event": "American whiskey production begins",
+        "desc": "With Scotch-Irish settlers distilling grain spirits in the new frontier, American whiskey takes root as the spirit of the young republic."
+      },
+      {
+        "year": "1789",
+        "event": "Bourbon County, Kentucky established",
+        "desc": "The county that gives Bourbon its name is founded. Distillers in the region begin shipping aged corn whiskey downstream to New Orleans."
+      },
+      {
+        "year": "1897",
+        "event": "Bottled-in-Bond Act passed",
+        "desc": "The first US consumer protection law for spirits guarantees that Bonded Bourbon is at least 4 years old, 100 proof, and from one distillery."
+      },
+      {
+        "year": "1964",
+        "event": "Bourbon declared a \"distinctive product of the USA\"",
+        "desc": "A Congressional resolution protects Bourbon as an American-made spirit — a designation that remains legally binding to this day."
+      }
+    ]
+  }
+}

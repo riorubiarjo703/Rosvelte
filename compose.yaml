@@ -1,0 +1,16 @@
+# Optional local Postgres (port 5432). If you use postgres-iatweb from ~/Docker/general/iatweb
+# instead (port 5434), point DATABASE_URL there — see .env.example.
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: rosvelte
+    volumes:
+      - pgdata:/var/lib/postgresql
+volumes:
+  pgdata:

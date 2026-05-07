@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+@theme {
+	--color-mms-gold: #c9a84c;
+	--color-mms-gold-light: #e8c97a;
+	--color-mms-gold-dim: #8b6e2f;
+	--color-mms-ink: #0d0b08;
+	--color-mms-ink2: #1a1713;
+	--color-mms-ink3: #221f1a;
+	--color-mms-cream: #f5f0e8;
+	--color-mms-cream2: #ede5d5;
+	--color-mms-muted: #6b6355;
+	--color-mms-white: #fdfcfa;
+	--color-mms-badge-limited-fg: #e8895a;
+	--color-mms-badge-exclusive-fg: #b8a8ef;
+
+	--font-mms-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+	--font-mms-logo: 'Bebas Neue', ui-sans-serif, system-ui, sans-serif;
+	--font-mms-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+
+	--animate-mms-marquee: mms-marquee 20s linear infinite;
+	--animate-mms-scroll-line: mms-scroll-line 2s ease-in-out infinite alternate;
+}
+
+@keyframes mms-marquee {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-50%);
+	}
+}
+
+@keyframes mms-scroll-line {
+	from {
+		transform: scaleX(0.3);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+
+@keyframes mms-pin-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+
+@keyframes mms-fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Origin card SVG backgrounds (too long for arbitrary utilities) */
+@utility bg-mms-origin-scotland {
+	background-color: #1a3a5c;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='600'%3E%3Crect fill='%231A3A5C' width='400' height='600'/%3E%3Ccircle cx='200' cy='180' r='120' fill='%230D2137' opacity='0.6'/%3E%3Ccircle cx='200' cy='180' r='60' fill='%23C9A84C' opacity='0.15'/%3E%3Cpath d='M60 420 Q200 320 340 420 Q200 500 60 420Z' fill='%23C9A84C' opacity='0.08'/%3E%3C/svg%3E");
+	background-size: cover;
+	background-position: center;
+}
+
+@utility bg-mms-origin-france {
+	background-color: #2c1a2e;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232C1A2E' width='400' height='300'/%3E%3Cellipse cx='200' cy='100' rx='150' ry='80' fill='%23C9A84C' opacity='0.07'/%3E%3Ccircle cx='200' cy='100' r='30' fill='%23C9A84C' opacity='0.12'/%3E%3Cpath d='M50 250 Q200 180 350 250' stroke='%23C9A84C' stroke-width='0.5' fill='none' opacity='0.3'/%3E%3C/svg%3E");
+	background-size: cover;
+	background-position: center;
+}
+
+@utility bg-mms-origin-japan {
+	background-color: #1a1a1f;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231A1A1F' width='400' height='300'/%3E%3Ccircle cx='200' cy='130' r='90' fill='%23C9A84C' opacity='0.06'/%3E%3Ccircle cx='200' cy='130' r='40' fill='%23C9A84C' opacity='0.1'/%3E%3Cpath d='M0 200 Q100 170 200 200 Q300 230 400 200' stroke='%23C9A84C' stroke-width='0.5' fill='none' opacity='0.2'/%3E%3C/svg%3E");
+	background-size: cover;
+	background-position: center;
+}
+
+@utility bg-mms-origin-mexico {
+	background-color: #1e2a1a;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231E2A1A' width='400' height='300'/%3E%3Cpolygon points='200,40 230,130 320,130 250,185 275,275 200,220 125,275 150,185 80,130 170,130' fill='%23C9A84C' opacity='0.06'/%3E%3Ccircle cx='200' cy='140' r='35' fill='%23C9A84C' opacity='0.09'/%3E%3C/svg%3E");
+	background-size: cover;
+	background-position: center;
+}
