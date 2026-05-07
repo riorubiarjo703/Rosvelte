@@ -16,6 +16,7 @@
 	import { storeTaxRate } from '$lib/store/mms-store-settings';
 
 	const collectionsPath = resolve('/collections');
+const checkoutPath = resolve('/checkout');
 	const catalogHeroImages = $derived(page.data.catalogHeroImages);
 	const taxAmount = $derived(Math.round(($cartSubtotal * $storeTaxRate) / 100));
 	const grandTotal = $derived($cartSubtotal + taxAmount);
@@ -206,12 +207,12 @@
 						Tax is applied from Store Settings. Shipping and allocation holds are confirmed with concierge
 						at checkout. This demo does not process payments.
 					</p>
-					<button
-						type="button"
-						class="mt-8 w-full bg-mms-gold py-4 font-mms-sans text-[0.68rem] uppercase tracking-[0.22em] text-mms-ink transition hover:bg-mms-gold-light"
+					<a
+						href={checkoutPath}
+						class="mt-8 block w-full bg-mms-gold py-4 text-center font-mms-sans text-[0.68rem] uppercase tracking-[0.22em] text-mms-ink no-underline transition hover:bg-mms-gold-light"
 					>
 						Proceed to checkout
-					</button>
+					</a>
 					<a
 						href={collectionsPath}
 						class="mt-4 block w-full border border-mms-gold/30 py-3 text-center font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:border-mms-gold hover:bg-mms-gold/10"

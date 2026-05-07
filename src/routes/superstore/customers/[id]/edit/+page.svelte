@@ -4,10 +4,22 @@
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 
 	type CustomerFieldErrors = Partial<Record<string, string[] | undefined>>;
+	type CustomerAddress = {
+		id: string;
+		label: string;
+		recipient: string;
+		phone: string;
+		addressLine: string;
+		city: string;
+		postalCode: string;
+		isDefault: boolean;
+	};
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const fe = $derived((form?.errors as CustomerFieldErrors | undefined) ?? {});
+	let customerAddresses = $state<CustomerAddress[]>([]);
+	let addressesHydrated = $state(false);
 
 	const languageOptions = ['English', 'Bahasa Indonesia', '日本語'] as const;
 	const spiritOptions: string[] = [
@@ -22,6 +34,39 @@
 	function hrefFor(path: Pathname) {
 		return resolvedLocalizedHref(path);
 	}
+
+	$effect(() => {
+		if (addressesHydrated || typeof window === 'undefined') return;
+		addressesHydrated = true;
+		const key = `rosvelte-customer-addresses-${data.customer.id}`;
+		try {
+			const raw = localStorage.getItem(key);
+			if (!raw) {
+				customerAddresses = [];
+				return;
+			}
+			const parsed = JSON.parse(raw) as CustomerAddress[];
+			if (!Array.isArray(parsed)) {
+				customerAddresses = [];
+				return;
+			}
+			customerAddresses = parsed
+				.filter((entry) => entry && typeof entry === 'object')
+				.map((entry) => ({
+					id: String(entry.id || ''),
+					label: String(entry.label || 'Address'),
+					recipient: String(entry.recipient || ''),
+					phone: String(entry.phone || ''),
+					addressLine: String(entry.addressLine || ''),
+					city: String(entry.city || ''),
+					postalCode: String(entry.postalCode || ''),
+					isDefault: Boolean(entry.isDefault)
+				}))
+				.filter((entry) => entry.id && entry.recipient && entry.addressLine && entry.city && entry.postalCode);
+		} catch {
+			customerAddresses = [];
+		}
+	});
 </script>
 
 <svelte:head>
@@ -141,6 +186,43 @@
 				<label class="text-[0.65rem] tracking-[0.15em] text-mms-muted uppercase" for="emailVerified">Email verified (Active status)</label>
 			</div>
 		</div>
+	</section>
+
+	<section class="bg-mms-ink2 p-6">
+		<h3 class="mb-4 flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-mms-gold-dim uppercase">
+			Address list
+			<span class="h-px flex-1 bg-mms-gold/[0.08]"></span>
+		</h3>
+		{#if customerAddresses.length === 0}
+			<p class="text-[0.72rem] leading-relaxed text-mms-muted">
+				No saved addresses found for this customer in current browser storage.
+			</p>
+		{:else}
+			<div class="grid gap-px bg-mms-gold/10 md:grid-cols-2">
+				{#each customerAddresses as address (address.id)}
+					<div class="relative bg-mms-ink3 p-4">
+						{#if address.isDefault}
+							<span
+								class="absolute right-4 top-4 border border-mms-gold/25 bg-mms-gold/10 px-2 py-0.5 text-[0.52rem] uppercase tracking-[0.15em] text-mms-gold"
+							>
+								Default
+							</span>
+						{/if}
+						<p class="text-[0.58rem] uppercase tracking-[0.18em] text-mms-gold-dim">{address.label}</p>
+						<p class="mt-2 text-sm font-medium text-mms-cream">{address.recipient}</p>
+						<p class="mt-2 text-[0.75rem] leading-relaxed text-mms-muted">
+							{address.addressLine}
+							<br />
+							{address.city} {address.postalCode}
+							{#if address.phone}
+								<br />
+								{address.phone}
+							{/if}
+						</p>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</section>
 
 	<section class="bg-mms-ink2 p-6">

@@ -98,6 +98,17 @@
 	let pwConfirm = $state('');
 
 	type NotifKey = 'drops' | 'orders' | 'digest' | 'wishlist' | 'events';
+	const CUSTOMER_PHONE_REGEX = /^[+0-9()\-. ]{8,20}$/;
+	type CustomerAddress = {
+		id: string;
+		label: string;
+		recipient: string;
+		phone: string;
+		addressLine: string;
+		city: string;
+		postalCode: string;
+		isDefault: boolean;
+	};
 	let notifs = $state<Record<NotifKey, boolean>>({
 		drops: true,
 		orders: true,
@@ -106,6 +117,18 @@
 		events: false
 	});
 	let notifsHydrated = $state(false);
+	let addressesHydrated = $state(false);
+	let addressBook = $state<CustomerAddress[]>([]);
+	let showAddressForm = $state(false);
+	let addressError = $state('');
+	let editingAddressId = $state<string | null>(null);
+	let addressLabelInput = $state('');
+	let addressRecipientInput = $state('');
+	let addressPhoneInput = $state('');
+	let addressLineInput = $state('');
+	let addressCityInput = $state('');
+	let addressPostalCodeInput = $state('');
+	let addressDefaultInput = $state(false);
 
 	function loadProfileFromCustomer() {
 		const { first, last } = splitName(customer.name);
@@ -153,6 +176,168 @@
 		persistNotifs();
 	}
 
+	function addressStorageKey() {
+		return `rosvelte-customer-addresses-${customer.id}`;
+	}
+
+	function loadAddressesFromStorage() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			const raw = localStorage.getItem(addressStorageKey());
+			if (!raw) {
+				addressBook = [];
+				return;
+			}
+			const parsed = JSON.parse(raw) as CustomerAddress[];
+			if (!Array.isArray(parsed)) {
+				addressBook = [];
+				return;
+			}
+			addressBook = parsed
+				.filter((entry) => entry && typeof entry === 'object')
+				.map((entry) => ({
+					id: String(entry.id || ''),
+					label: String(entry.label || 'Address'),
+					recipient: String(entry.recipient || ''),
+					phone: String(entry.phone || ''),
+					addressLine: String(entry.addressLine || ''),
+					city: String(entry.city || ''),
+					postalCode: String(entry.postalCode || ''),
+					isDefault: Boolean(entry.isDefault)
+				}))
+				.filter((entry) => entry.id && entry.recipient && entry.addressLine && entry.city && entry.postalCode);
+			if (addressBook.length > 0 && !addressBook.some((entry) => entry.isDefault)) {
+				addressBook = addressBook.map((entry, index) => ({ ...entry, isDefault: index === 0 }));
+				persistAddresses();
+			}
+		} catch {
+			addressBook = [];
+		}
+	}
+
+	function persistAddresses() {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			localStorage.setItem(addressStorageKey(), JSON.stringify(addressBook));
+		} catch {
+			/* ignore */
+		}
+	}
+
+	function resetAddressForm() {
+		editingAddressId = null;
+		addressLabelInput = '';
+		addressRecipientInput = '';
+		addressPhoneInput = '';
+		addressLineInput = '';
+		addressCityInput = '';
+		addressPostalCodeInput = '';
+		addressDefaultInput = addressBook.length === 0;
+		addressError = '';
+	}
+
+	function startAddAddress() {
+		resetAddressForm();
+		showAddressForm = true;
+	}
+
+	function startEditAddress(id: string) {
+		const target = addressBook.find((entry) => entry.id === id);
+		if (!target) return;
+		editingAddressId = target.id;
+		addressLabelInput = target.label;
+		addressRecipientInput = target.recipient;
+		addressPhoneInput = target.phone;
+		addressLineInput = target.addressLine;
+		addressCityInput = target.city;
+		addressPostalCodeInput = target.postalCode;
+		addressDefaultInput = target.isDefault;
+		addressError = '';
+		showAddressForm = true;
+	}
+
+	function saveAddress(event: SubmitEvent) {
+		event.preventDefault();
+		const label = addressLabelInput.trim();
+		const recipient = addressRecipientInput.trim();
+		const phone = addressPhoneInput.trim();
+		const addressLine = addressLineInput.trim();
+		const city = addressCityInput.trim();
+		const postalCode = addressPostalCodeInput.trim();
+		const setDefault = addressDefaultInput;
+
+		if (!recipient || !addressLine || !city || !postalCode) {
+			addressError = 'Please complete recipient, address, city, and postal code.';
+			return;
+		}
+		if (phone && !CUSTOMER_PHONE_REGEX.test(phone)) {
+			addressError = 'Phone format is invalid. Use numbers and +()-. only.';
+			return;
+		}
+
+		if (editingAddressId) {
+			const currentlyEdited = addressBook.find((entry) => entry.id === editingAddressId);
+			if (!currentlyEdited) return;
+			const shouldSetDefault = setDefault || (addressBook.length === 1 && currentlyEdited.isDefault);
+			addressBook = addressBook.map((entry) => {
+				if (entry.id === editingAddressId) {
+					return {
+						...entry,
+						label: label || 'Address',
+						recipient,
+						phone,
+						addressLine,
+						city,
+						postalCode,
+						isDefault: shouldSetDefault
+					};
+				}
+				if (shouldSetDefault) return { ...entry, isDefault: false };
+				return entry;
+			});
+			if (!shouldSetDefault) {
+				const hasDefault = addressBook.some((entry) => entry.isDefault);
+				if (!hasDefault) {
+					addressBook = addressBook.map((entry, index) => ({ ...entry, isDefault: index === 0 }));
+				}
+			}
+		} else {
+			const next: CustomerAddress = {
+				id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+				label: label || 'Address',
+				recipient,
+				phone,
+				addressLine,
+				city,
+				postalCode,
+				isDefault: addressBook.length === 0 || setDefault
+			};
+
+			addressBook = [
+				...(next.isDefault ? addressBook.map((entry) => ({ ...entry, isDefault: false })) : addressBook),
+				next
+			];
+		}
+		persistAddresses();
+		showAddressForm = false;
+		resetAddressForm();
+	}
+
+	function removeAddress(id: string) {
+		const target = addressBook.find((entry) => entry.id === id);
+		if (!target) return;
+		addressBook = addressBook.filter((entry) => entry.id !== id);
+		if (target.isDefault && addressBook.length > 0) {
+			addressBook = addressBook.map((entry, index) => ({ ...entry, isDefault: index === 0 }));
+		}
+		persistAddresses();
+	}
+
+	function setDefaultAddress(id: string) {
+		addressBook = addressBook.map((entry) => ({ ...entry, isDefault: entry.id === id }));
+		persistAddresses();
+	}
+
 	$effect(() => {
 		if (activePanel !== 'profile') {
 			notifsHydrated = false;
@@ -161,6 +346,16 @@
 		if (notifsHydrated || typeof window === 'undefined') return;
 		notifsHydrated = true;
 		loadNotifsFromStorage();
+	});
+
+	$effect(() => {
+		if (activePanel !== 'addresses') {
+			addressesHydrated = false;
+			return;
+		}
+		if (addressesHydrated || typeof window === 'undefined') return;
+		addressesHydrated = true;
+		loadAddressesFromStorage();
 	});
 
 	const inputClass =
@@ -567,29 +762,161 @@
 				<p class="mb-2 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim before:block before:h-px before:w-4 before:bg-mms-gold-dim">Delivery</p>
 				<h1 class="font-mms-display text-3xl font-light text-mms-cream md:text-[2rem]">My <em class="text-mms-gold-light italic">addresses</em></h1>
 			</header>
-			<div class="grid grid-cols-1 gap-px bg-mms-gold/10 md:grid-cols-2">
-				<div class="relative bg-[#1a1713] p-7">
-					<span
-						class="absolute right-6 top-6 border border-mms-gold/25 bg-mms-gold/10 px-2 py-0.5 text-[0.52rem] uppercase tracking-[0.15em] text-mms-gold"
-					>
-						Example
-					</span>
-					<p class="text-[0.6rem] uppercase tracking-[0.2em] text-mms-gold-dim">Home</p>
-					<p class="mt-3 text-sm font-medium text-mms-cream">{customer.name}</p>
-					<p class="mt-2 text-[0.78rem] leading-relaxed text-mms-muted">
-						Saved shipping addresses will appear here for faster checkout.
-					</p>
-				</div>
+			<div class="mb-5 flex justify-end">
 				<button
 					type="button"
-					class="flex min-h-[180px] flex-col items-center justify-center gap-2 border border-dashed border-mms-gold/20 bg-[#221f1a] text-mms-muted transition hover:border-mms-gold/40"
+					class="border border-mms-gold/40 px-5 py-2 text-[0.62rem] uppercase tracking-[0.18em] text-mms-gold transition hover:border-mms-gold hover:bg-mms-gold hover:text-mms-ink"
+					onclick={() => {
+						if (showAddressForm) {
+							showAddressForm = false;
+							resetAddressForm();
+						} else {
+							startAddAddress();
+						}
+					}}
 				>
-					<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-						<circle cx="12" cy="12" r="10" />
-						<path d="M12 8v8M8 12h8" />
-					</svg>
-					<span class="text-[0.65rem] uppercase tracking-[0.18em]">Add address (soon)</span>
+					{showAddressForm ? 'Close form' : 'Add address'}
 				</button>
+			</div>
+
+			{#if showAddressForm}
+				<form class="mb-6 border border-mms-gold/10 bg-[#1a1713] p-6 md:p-7" onsubmit={saveAddress}>
+					<p class="mb-4 text-[0.6rem] uppercase tracking-[0.2em] text-mms-gold-dim">
+						{editingAddressId ? 'Edit shipping address' : 'New shipping address'}
+					</p>
+					{#if addressError}
+						<p class="mb-4 text-[0.78rem] text-red-400/95">{addressError}</p>
+					{/if}
+					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<div>
+							<label class={labelClass} for="address-label">Label</label>
+							<input
+								id="address-label"
+								name="addressLabel"
+								class={inputClass}
+								placeholder="Home, Office, etc."
+								bind:value={addressLabelInput}
+							/>
+						</div>
+						<div>
+							<label class={labelClass} for="address-recipient">Recipient name</label>
+							<input
+								id="address-recipient"
+								name="addressRecipient"
+								class={inputClass}
+								required
+								bind:value={addressRecipientInput}
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label class={labelClass} for="address-line">Address line</label>
+							<textarea
+								id="address-line"
+								name="addressLine"
+								class={inputClass}
+								required
+								rows="3"
+								placeholder="Street, building, district"
+								bind:value={addressLineInput}
+							></textarea>
+						</div>
+						<div>
+							<label class={labelClass} for="address-city">City</label>
+							<input id="address-city" name="addressCity" class={inputClass} required bind:value={addressCityInput} />
+						</div>
+						<div>
+							<label class={labelClass} for="address-postal">Postal code</label>
+							<input
+								id="address-postal"
+								name="addressPostalCode"
+								class={inputClass}
+								required
+								bind:value={addressPostalCodeInput}
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label class={labelClass} for="address-phone">Phone (optional)</label>
+							<input
+								id="address-phone"
+								name="addressPhone"
+								class={inputClass}
+								type="tel"
+								bind:value={addressPhoneInput}
+							/>
+						</div>
+					</div>
+					<label class="mt-4 inline-flex items-center gap-2 text-[0.72rem] text-mms-muted">
+						<input type="checkbox" name="addressDefault" class="accent-mms-gold" bind:checked={addressDefaultInput} />
+						Set as default address
+					</label>
+					<div class="mt-6 flex justify-end">
+						<button
+							type="submit"
+							class="border border-mms-gold bg-mms-gold px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.18em] text-mms-ink transition hover:bg-mms-gold-light"
+						>
+							{editingAddressId ? 'Update address' : 'Save address'}
+						</button>
+					</div>
+				</form>
+			{/if}
+
+			<div class="grid grid-cols-1 gap-px bg-mms-gold/10 md:grid-cols-2">
+				{#if addressBook.length === 0}
+					<div class="md:col-span-2 bg-[#1a1713] p-8 text-center">
+						<p class="font-mms-serif text-lg text-mms-cream/95">No address saved yet</p>
+						<p class="mt-2 text-[0.78rem] leading-relaxed text-mms-muted">
+							Add a shipping address to make checkout faster.
+						</p>
+					</div>
+				{:else}
+					{#each addressBook as entry (entry.id)}
+						<div class="relative bg-[#1a1713] p-7">
+							{#if entry.isDefault}
+								<span
+									class="absolute right-6 top-6 border border-mms-gold/25 bg-mms-gold/10 px-2 py-0.5 text-[0.52rem] uppercase tracking-[0.15em] text-mms-gold"
+								>
+									Default
+								</span>
+							{/if}
+							<p class="text-[0.6rem] uppercase tracking-[0.2em] text-mms-gold-dim">{entry.label}</p>
+							<p class="mt-3 text-sm font-medium text-mms-cream">{entry.recipient}</p>
+							<p class="mt-2 text-[0.78rem] leading-relaxed text-mms-muted">
+								{entry.addressLine}
+								<br />
+								{entry.city} {entry.postalCode}
+								{#if entry.phone}
+									<br />
+									{entry.phone}
+								{/if}
+							</p>
+							<div class="mt-4 flex gap-2">
+								<button
+									type="button"
+									class="border border-mms-gold/25 px-3 py-1.5 text-[0.55rem] uppercase tracking-[0.15em] text-mms-gold transition hover:border-mms-gold hover:bg-mms-gold hover:text-mms-ink"
+									onclick={() => startEditAddress(entry.id)}
+								>
+									Edit
+								</button>
+								{#if !entry.isDefault}
+									<button
+										type="button"
+										class="border border-mms-gold/25 px-3 py-1.5 text-[0.55rem] uppercase tracking-[0.15em] text-mms-gold transition hover:border-mms-gold hover:bg-mms-gold hover:text-mms-ink"
+										onclick={() => setDefaultAddress(entry.id)}
+									>
+										Set default
+									</button>
+								{/if}
+								<button
+									type="button"
+									class="border border-red-400/40 px-3 py-1.5 text-[0.55rem] uppercase tracking-[0.15em] text-red-300 transition hover:bg-red-500/20"
+									onclick={() => removeAddress(entry.id)}
+								>
+									Remove
+								</button>
+							</div>
+						</div>
+					{/each}
+				{/if}
 			</div>
 		{/if}
 

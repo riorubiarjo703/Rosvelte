@@ -116,6 +116,10 @@
 		if (a.wide && i === 0) return 80;
 		return 55;
 	}
+
+function journalHref(id: number): string {
+	return resolve('/journal/[id]', { id: String(id) });
+}
 </script>
 
 <svelte:head>
@@ -202,8 +206,9 @@
 		>
 			Featured Article
 		</p>
-		<div
-			class={`group relative grid cursor-pointer grid-cols-1 overflow-hidden bg-mms-ink2 transition-colors hover:bg-mms-ink3 md:grid-cols-2 ${mmsReveal}`}
+		<a
+			href={data.featuredId ? journalHref(data.featuredId) : resolve('/journal')}
+			class={`group relative grid grid-cols-1 overflow-hidden bg-mms-ink2 transition-colors hover:bg-mms-ink3 md:grid-cols-2 ${mmsReveal}`}
 		>
 			<div
 				class="pointer-events-none absolute inset-x-0 top-0 z-[2] h-0.5 origin-left scale-x-0 bg-mms-gold transition-transform duration-500 group-hover:scale-x-100"
@@ -244,12 +249,12 @@
 					<span class="border-l border-mms-gold/15 pl-6 text-[0.68rem] text-mms-muted"
 						>{data.featured.read} read</span>
 				</div>
-				<button
-					type="button"
-					class="flex cursor-pointer items-center gap-2 self-start border-none bg-transparent p-0 text-left font-mms-sans text-[0.7rem] uppercase tracking-[0.2em] text-mms-gold transition-[gap] duration-200 hover:gap-3"
-					>Read Article →</button>
+				<span
+					class="flex items-center gap-2 self-start text-left font-mms-sans text-[0.7rem] uppercase tracking-[0.2em] text-mms-gold transition-[gap] duration-200 group-hover:gap-3"
+					>Read Article →</span
+				>
 			</div>
-		</div>
+		</a>
 	</section>
 
 	<div class="px-6 md:px-16">
@@ -320,8 +325,9 @@
 				{#if isListView}
 					<div class="flex flex-col gap-px bg-mms-gold/10">
 						{#each filtered as a (a.id)}
-							<div
-								class="group relative grid cursor-pointer grid-cols-[90px_1fr] bg-mms-ink2 transition-colors hover:bg-mms-ink3 sm:grid-cols-[120px_1fr] {mmsRevealShort}"
+							<a
+								href={journalHref(a.id)}
+								class="group relative grid grid-cols-[90px_1fr] bg-mms-ink2 transition-colors hover:bg-mms-ink3 sm:grid-cols-[120px_1fr] {mmsRevealShort}"
 							>
 								<div
 									class="pointer-events-none absolute bottom-0 left-0 top-0 w-px origin-top scale-y-0 bg-mms-gold transition-transform group-hover:scale-y-100"
@@ -347,14 +353,15 @@
 										<span>{a.read} read</span>
 									</div>
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				{:else}
 					<div class="mb-12 grid grid-cols-1 gap-px bg-mms-gold/10 sm:grid-cols-2">
 						{#each filtered as a, i (a.id)}
-							<div
-								class="group relative flex cursor-pointer flex-col overflow-hidden bg-mms-ink2 transition-colors hover:bg-mms-ink3 {a.wide && i === 0
+							<a
+								href={journalHref(a.id)}
+								class="group relative flex flex-col overflow-hidden bg-mms-ink2 transition-colors hover:bg-mms-ink3 {a.wide && i === 0
 									? 'sm:col-span-2'
 									: ''} {mmsRevealShort} {cardDelays[i % cardDelays.length] ?? ''}"
 							>
@@ -397,7 +404,7 @@
 										</div>
 									</div>
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				{/if}

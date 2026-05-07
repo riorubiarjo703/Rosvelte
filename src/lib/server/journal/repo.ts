@@ -106,6 +106,17 @@ export async function getJournalPostById(id: number): Promise<JournalRow | null>
 	return row ?? null;
 }
 
+export async function getActiveJournalPostById(id: number): Promise<JournalRow | null> {
+	const [row] = await db
+		.select()
+		.from(journalPost)
+		.where(eq(journalPost.id, id))
+		.limit(1);
+
+	if (!row || row.status !== 'active') return null;
+	return row;
+}
+
 export async function updateJournalPostById(
 	postId: number,
 	fields: {
