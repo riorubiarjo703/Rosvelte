@@ -45,6 +45,8 @@
 	const currentCat = $derived(mmsParseCollectionCategory(page.url.searchParams));
 	const activeCountry = $derived(mmsParseCollectionCountry(page.url.searchParams));
 	const activeRegion = $derived(mmsParseCollectionRegion(page.url.searchParams));
+	const searchQuery = $derived(page.url.searchParams.get('q')?.trim() ?? '');
+	const searchNeedle = $derived(searchQuery.toLocaleLowerCase());
 
 	function setCollectionCat(cat: MmsCollectionCategory) {
 		goto(
@@ -81,6 +83,12 @@
 
 		if (activeCountry) list = list.filter((p) => p.country === activeCountry);
 		if (activeRegion) list = list.filter((p) => p.region === activeRegion);
+		if (searchNeedle) {
+			list = list.filter((p) => {
+				const haystack = `${p.name} ${p.country} ${p.region} ${p.desc}`.toLocaleLowerCase();
+				return haystack.includes(searchNeedle);
+			});
+		}
 
 		if (sortKey === 'price-asc') list.sort((a, b) => a.price - b.price);
 		else if (sortKey === 'price-desc') list.sort((a, b) => b.price - a.price);
@@ -268,7 +276,11 @@
 						<p
 							class="col-span-full bg-mms-ink px-4 py-12 text-center text-[0.85rem] tracking-[0.08em] text-mms-muted sm:col-span-2 lg:col-span-3"
 						>
-							No expressions in this category yet.
+							{#if searchQuery}
+								No products found for "{searchQuery}".
+							{:else}
+								No expressions in this category yet.
+							{/if}
 						</p>
 					{:else}
 						{#each filtered as p, i (p.id)}

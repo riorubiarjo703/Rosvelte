@@ -18,6 +18,7 @@
 	const collectionsPath = resolve('/collections');
 const checkoutPath = resolve('/checkout');
 	const catalogHeroImages = $derived(page.data.catalogHeroImages);
+	const catalogStockQtys = $derived(page.data.catalogStockQtys);
 	const taxAmount = $derived(Math.round(($cartSubtotal * $storeTaxRate) / 100));
 	const grandTotal = $derived($cartSubtotal + taxAmount);
 </script>
@@ -116,6 +117,13 @@ const checkoutPath = resolve('/checkout');
 					<ul class="flex flex-col gap-0 divide-y divide-mms-gold/[0.08]">
 						{#each $cartLines as line (line.productId)}
 							{@const lineImg = resolveCartLineHeroImageHref(line, catalogHeroImages)}
+							{@const lineStockQty = line.stockQty ?? catalogStockQtys?.[String(line.productId)] ?? null}
+							{@const lineMaxQty =
+								typeof lineStockQty === 'number' && Number.isFinite(lineStockQty)
+									? Math.max(0, Math.trunc(lineStockQty))
+									: null}
+							{@const lineOutOfStock = lineMaxQty !== null && lineMaxQty <= 0}
+							{@const lineAtMax = lineMaxQty !== null && line.qty >= lineMaxQty}
 							<li class="flex gap-5 py-8 first:pt-0 md:gap-8 md:py-10">
 								<div
 									class="flex size-[112px] shrink-0 items-center justify-center overflow-hidden rounded border border-mms-gold/10 bg-mms-ink2 md:size-[132px]"
@@ -143,6 +151,13 @@ const checkoutPath = resolve('/checkout');
 											>each</span
 										>
 									</p>
+									{#if lineMaxQty !== null}
+										<p class="mt-1 text-[0.58rem] uppercase tracking-[0.16em] {lineOutOfStock
+											? 'text-red-400'
+											: 'text-mms-muted'}">
+											{lineOutOfStock ? 'Out of stock' : `In stock: ${lineMaxQty}`}
+										</p>
+									{/if}
 									<div class="mt-5 flex flex-wrap items-center gap-4">
 										<div
 											class="inline-flex items-center border border-mms-gold/25 font-mms-sans text-[0.7rem] text-mms-cream"
@@ -158,9 +173,10 @@ const checkoutPath = resolve('/checkout');
 											<span class="min-w-[2.5rem] text-center tabular-nums">{line.qty}</span>
 											<button
 												type="button"
-												class="px-3 py-2 transition hover:bg-mms-gold/15"
+												class="px-3 py-2 transition hover:bg-mms-gold/15 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
 												aria-label="Increase quantity"
-												onclick={() => setLineQty(line.productId, line.qty + 1)}
+												disabled={lineOutOfStock || lineAtMax}
+												onclick={() => setLineQty(line.productId, line.qty + 1, lineMaxQty)}
 											>
 												+
 											</button>

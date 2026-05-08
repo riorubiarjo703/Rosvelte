@@ -3,17 +3,21 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
 	let catalogHeroImages: Record<string, number | null> = {};
+	let catalogStockQtys: Record<string, number> = {};
 	try {
 		const rows = await listPublishedCatalogProducts();
 		for (const r of rows) {
 			catalogHeroImages[String(r.id)] = r.heroImageUploadId ?? null;
+			catalogStockQtys[String(r.id)] = Math.max(0, Math.trunc(r.stockQty));
 		}
 	} catch {
 		catalogHeroImages = {};
+		catalogStockQtys = {};
 	}
 
 	return {
 		customer: locals.customer ?? null,
-		catalogHeroImages
+		catalogHeroImages,
+		catalogStockQtys
 	};
 };

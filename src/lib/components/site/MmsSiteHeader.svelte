@@ -16,7 +16,7 @@
 	import MmsNavMegaOrigins from './MmsNavMegaOrigins.svelte';
 	import MmsNavMegaEditorial from './MmsNavMegaEditorial.svelte';
 	import MmsMiniCart from '$lib/components/cart/MmsMiniCart.svelte';
-	import { cartItemCount, syncCartHeroIdsFromCatalog } from '$lib/cart/mms-cart';
+	import { cartItemCount, syncCartHeroIdsFromCatalog, syncCartStockQtysFromCatalog } from '$lib/cart/mms-cart';
 	import { storeHeaderLogo } from '$lib/store/mms-store-settings';
 
 	let menuOpen = $state(false);
@@ -51,6 +51,10 @@
 	const cartPath = $derived(resolve('/cart'));
 	const accountPath = $derived(resolve('/account'));
 	const accountLoginPath = $derived(resolve('/account/login'));
+	const searchQuery = $derived(searchParams.get('q')?.trim() ?? '');
+	const searchCat = $derived(searchParams.get('cat')?.trim() ?? '');
+	const searchCountry = $derived(searchParams.get('country')?.trim() ?? '');
+	const searchRegion = $derived(searchParams.get('region')?.trim() ?? '');
 
 	function toggleMenu() {
 		menuOpen = !menuOpen;
@@ -79,6 +83,10 @@
 		const map = page.data.catalogHeroImages;
 		if (map && Object.keys(map).length > 0) {
 			syncCartHeroIdsFromCatalog(map);
+		}
+		const stockMap = page.data.catalogStockQtys;
+		if (stockMap && Object.keys(stockMap).length > 0) {
+			syncCartStockQtysFromCatalog(stockMap);
 		}
 	});
 
@@ -203,6 +211,32 @@
 	>
 		<!-- Mobile -->
 		<div class="hidden max-md:flex max-md:w-full max-md:flex-col max-md:gap-8">
+			<form method="GET" action={collectionsPath} class="flex items-center gap-2 border border-mms-gold/25 px-2 py-2">
+				<label class="sr-only" for="site-search-mobile">Search products</label>
+				<input
+					id="site-search-mobile"
+					name="q"
+					type="search"
+					placeholder="Search products"
+					value={searchQuery}
+					class="min-w-0 flex-1 border-none bg-transparent px-2 py-1 font-mms-sans text-[0.72rem] text-mms-cream outline-none placeholder:text-mms-muted"
+				/>
+				{#if isCollections && searchCat}
+					<input type="hidden" name="cat" value={searchCat} />
+				{/if}
+				{#if isCollections && searchCountry}
+					<input type="hidden" name="country" value={searchCountry} />
+				{/if}
+				{#if isCollections && searchRegion}
+					<input type="hidden" name="region" value={searchRegion} />
+				{/if}
+				<button
+					type="submit"
+					class="border border-mms-gold/45 px-3 py-1.5 text-[0.62rem] uppercase tracking-[0.16em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
+				>
+					Search
+				</button>
+			</form>
 			<div>
 				<p class="mb-2 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim">Collection</p>
 				<a href={collectionsPath} class={mobileLink(isCollections && activeCollectionCat === 'all')} onclick={closeMenu}
@@ -366,6 +400,36 @@
 		</div>
 	</div>
 	<div class="hidden shrink-0 items-center gap-2 md:flex md:gap-3 lg:gap-4">
+		<form
+			method="GET"
+			action={collectionsPath}
+			class="relative z-[102] flex items-center gap-2 border border-mms-gold/25 bg-mms-ink/40 px-2 py-1.5"
+		>
+			<label class="sr-only" for="site-search-desktop">Search products</label>
+			<input
+				id="site-search-desktop"
+				name="q"
+				type="search"
+				placeholder="Search products"
+				value={searchQuery}
+				class="w-[9.5rem] border-none bg-transparent px-1 py-1 font-mms-sans text-[0.68rem] tracking-[0.08em] text-mms-cream outline-none placeholder:text-mms-muted lg:w-[11rem]"
+			/>
+			{#if isCollections && searchCat}
+				<input type="hidden" name="cat" value={searchCat} />
+			{/if}
+			{#if isCollections && searchCountry}
+				<input type="hidden" name="country" value={searchCountry} />
+			{/if}
+			{#if isCollections && searchRegion}
+				<input type="hidden" name="region" value={searchRegion} />
+			{/if}
+			<button
+				type="submit"
+				class="inline-flex items-center border border-mms-gold/45 px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.18em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
+			>
+				Go
+			</button>
+		</form>
 		<a
 			href={reserveHref}
 			class="border border-mms-gold-dim px-5 py-2 text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
@@ -431,5 +495,6 @@
 		open={cartOpen}
 		onClose={() => (cartOpen = false)}
 		catalogHeroImages={page.data.catalogHeroImages}
+		catalogStockQtys={page.data.catalogStockQtys}
 	/>
 </div>

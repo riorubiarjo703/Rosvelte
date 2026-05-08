@@ -57,6 +57,11 @@
 	let qty = $state(1);
 	let heroEl = $state<HTMLElement | null>(null);
 	let showSticky = $state(false);
+	const maxStockQty = $derived.by(() => {
+		if (product.stockQty === undefined || !Number.isFinite(product.stockQty)) return null;
+		return Math.max(0, Math.trunc(product.stockQty));
+	});
+	const isOutOfStock = $derived(maxStockQty !== null && maxStockQty <= 0);
 
 	const displayPrice = $derived.by(() => {
 		let base = product.price;
@@ -68,10 +73,14 @@
 	const priceLabel = $derived(formatIdr(displayPrice));
 
 	function bumpQty(d: number) {
-		qty = Math.min(6, Math.max(1, qty + d));
+		if (isOutOfStock) return;
+		let next = Math.min(6, Math.max(1, qty + d));
+		if (maxStockQty !== null) next = Math.min(next, maxStockQty);
+		qty = next;
 	}
 
 	function handleAdd() {
+		if (isOutOfStock) return;
 		addToCart(product, qty, { unitPrice: displayPrice });
 	}
 
@@ -313,6 +322,11 @@
 						>Free delivery above Rp 1.5M</span
 					>
 				</p>
+				{#if maxStockQty !== null}
+					<p class="mt-2 text-[0.62rem] uppercase tracking-[0.16em] {isOutOfStock ? 'text-red-400' : 'text-mms-muted'}">
+						{isOutOfStock ? 'Out of stock' : `In stock: ${maxStockQty}`}
+					</p>
+				{/if}
 			</div>
 
 			<div class="mb-6 flex flex-wrap items-stretch gap-2 sm:flex-nowrap">
@@ -329,17 +343,19 @@
 					>
 					<button
 						type="button"
-						class="w-10 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10"
+						class="w-10 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
 						aria-label="Increase quantity"
+						disabled={isOutOfStock || (maxStockQty !== null && qty >= maxStockQty)}
 						onclick={() => bumpQty(1)}>+</button
 					>
 				</div>
 				<button
 					type="button"
-					class="min-h-[3rem] flex-1 bg-mms-gold px-4 font-mms-sans text-[0.7rem] uppercase tracking-[0.22em] text-mms-ink transition hover:bg-mms-gold-light sm:min-w-[200px]"
+					class="min-h-[3rem] flex-1 bg-mms-gold px-4 font-mms-sans text-[0.7rem] uppercase tracking-[0.22em] text-mms-ink transition hover:bg-mms-gold-light disabled:cursor-not-allowed disabled:bg-mms-gold/20 disabled:text-mms-muted disabled:hover:bg-mms-gold/20 sm:min-w-[200px]"
+					disabled={isOutOfStock}
 					onclick={handleAdd}
 				>
-					Add to cart
+					{isOutOfStock ? 'Out of stock' : 'Add to cart'}
 				</button>
 				<button
 					type="button"
@@ -459,6 +475,7 @@
 		score={model.mmsScore}
 		{qty}
 		added={false}
+		disabled={isOutOfStock}
 		onAdd={handleAdd}
 	/>
 </div>

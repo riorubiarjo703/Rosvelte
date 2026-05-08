@@ -25,6 +25,11 @@
 	} = $props();
 
 	let qty = $state(1);
+	const maxStockQty = $derived.by(() => {
+		if (product.stockQty === undefined || !Number.isFinite(product.stockQty)) return null;
+		return Math.max(0, Math.trunc(product.stockQty));
+	});
+	const isOutOfStock = $derived(maxStockQty !== null && maxStockQty <= 0);
 
 	const detailHref = $derived(resolve('/collections/[id]', { id: String(product.id) }));
 
@@ -55,11 +60,15 @@
 	}
 
 	function bumpQty(delta: number) {
-		qty = Math.min(6, Math.max(1, qty + delta));
+		if (isOutOfStock) return;
+		let next = Math.min(6, Math.max(1, qty + delta));
+		if (maxStockQty !== null) next = Math.min(next, maxStockQty);
+		qty = next;
 	}
 
 	function handleAddToCart(e: MouseEvent) {
 		e.stopPropagation();
+		if (isOutOfStock) return;
 		onAddToCart?.(qty);
 		qty = 1;
 	}
@@ -139,6 +148,11 @@
 		</div>
 		<div class="pointer-events-none relative z-[2] hidden min-w-[200px] flex-col items-end gap-3 md:flex">
 			<span class="font-mms-display text-xl text-mms-gold md:text-[1.4rem]">{formatPrice(product.price)}</span>
+			{#if maxStockQty !== null}
+				<span class="text-[0.56rem] uppercase tracking-[0.16em] {isOutOfStock ? 'text-red-400' : 'text-mms-muted'}">
+					{isOutOfStock ? 'Out of stock' : `In stock: ${maxStockQty}`}
+				</span>
+			{/if}
 			<div class="pointer-events-auto relative z-[3] flex max-w-full items-center gap-2">
 				<div class="flex shrink-0 items-stretch border border-mms-gold/25 bg-mms-ink2">
 					<button
@@ -156,8 +170,9 @@
 					>
 					<button
 						type="button"
-						class="w-9 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10"
+						class="w-9 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
 						aria-label="Increase quantity"
+						disabled={isOutOfStock || (maxStockQty !== null && qty >= maxStockQty)}
 						onclick={(e) => {
 							e.stopPropagation();
 							bumpQty(1);
@@ -166,9 +181,10 @@
 				</div>
 				<button
 					type="button"
-					class="min-w-0 shrink whitespace-nowrap border border-mms-gold/30 bg-transparent px-4 py-2.5 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
+					class="min-w-0 shrink whitespace-nowrap border border-mms-gold/30 bg-transparent px-4 py-2.5 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink disabled:cursor-not-allowed disabled:border-mms-gold/15 disabled:text-mms-muted disabled:hover:bg-transparent"
+					disabled={isOutOfStock}
 					onclick={handleAddToCart}
-				>Add to cart</button>
+				>{isOutOfStock ? 'Out of stock' : 'Add to cart'}</button>
 			</div>
 		</div>
 	</div>
@@ -238,6 +254,13 @@
 			</div>
 		</div>
 		<span class="pointer-events-none relative z-[2] font-mms-display mb-4 block text-[1.6rem] font-light text-mms-gold">{formatPrice(product.price)}</span>
+		{#if maxStockQty !== null}
+			<p class="pointer-events-none relative z-[2] mb-3 text-[0.58rem] uppercase tracking-[0.16em] {isOutOfStock
+				? 'text-red-400'
+				: 'text-mms-muted'}">
+				{isOutOfStock ? 'Out of stock' : `In stock: ${maxStockQty}`}
+			</p>
+		{/if}
 		<div class="pointer-events-auto relative z-[3] flex items-stretch gap-2">
 			<div class="flex shrink-0 items-stretch border border-mms-gold/25 bg-transparent">
 				<button
@@ -255,8 +278,9 @@
 				>
 				<button
 					type="button"
-					class="w-9 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10"
+					class="w-9 bg-transparent font-mms-sans text-mms-cream transition hover:bg-mms-gold/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
 					aria-label="Increase quantity"
+					disabled={isOutOfStock || (maxStockQty !== null && qty >= maxStockQty)}
 					onclick={(e) => {
 						e.stopPropagation();
 						bumpQty(1);
@@ -265,9 +289,10 @@
 			</div>
 			<button
 				type="button"
-				class="min-w-0 flex-1 border border-mms-gold/30 bg-transparent px-2 py-3 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
+				class="min-w-0 flex-1 border border-mms-gold/30 bg-transparent px-2 py-3 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink disabled:cursor-not-allowed disabled:border-mms-gold/15 disabled:text-mms-muted disabled:hover:bg-transparent"
+				disabled={isOutOfStock}
 				onclick={handleAddToCart}
-			>Add to cart</button>
+			>{isOutOfStock ? 'Out of stock' : 'Add to cart'}</button>
 		</div>
 	</div>
 {/if}

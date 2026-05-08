@@ -19,6 +19,8 @@ declare global {
 			customer?: User | null;
 			/** Published catalogue product id → cover upload id (for cart thumbnails when localStorage lines omit `heroImageUploadId`). */
 			catalogHeroImages?: Record<string, number | null>;
+			/** Published catalogue product id → stock quantity snapshot. */
+			catalogStockQtys?: Record<string, number>;
 		}
 		// interface PageState {}
 		// interface Platform {}

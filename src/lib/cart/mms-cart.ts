@@ -16,6 +16,8 @@ export type MmsCartLine = {
 	region: string;
 	/** Cover image for bag UI; matches `catalog_product.hero_image_upload_id` when added from storefront. */
 	heroImageUploadId?: number | null;
+	/** Snapshot of storefront stock when line was added/synced; `0` means out of stock. */
+	stockQty?: number;
 };
 
 function loadLines(): MmsCartLine[] {
@@ -34,7 +36,10 @@ function loadLines(): MmsCartLine[] {
 				typeof (row as MmsCartLine).name === 'string' &&
 				typeof (row as MmsCartLine).price === 'number' &&
 				typeof (row as MmsCartLine).country === 'string' &&
-				typeof (row as MmsCartLine).region === 'string'
+				typeof (row as MmsCartLine).region === 'string' &&
+				((row as MmsCartLine).stockQty === undefined ||
+					(typeof (row as MmsCartLine).stockQty === 'number' &&
+						Number.isFinite((row as MmsCartLine).stockQty)))
 		);
 	} catch {
 		return [];
@@ -101,6 +106,28 @@ export function syncCartHeroIdsFromCatalog(catalogHeroImages: Record<string, num
 	});
 }
 
+/** Back-fill `stockQty` on lines that are missing it (persists to localStorage). */
+export function syncCartStockQtysFromCatalog(catalogStockQtys: Record<string, number>): void {
+	if (!browser) return;
+	cartLines.update((lines) => {
+		let changed = false;
+		const next = lines.map((l) => {
+			const raw = catalogStockQtys[String(l.productId)];
+			if (!Number.isFinite(raw)) return l;
+			const normalized = Math.max(0, Math.trunc(raw));
+			if (l.stockQty === normalized) return l;
+			changed = true;
+			return { ...l, stockQty: normalized };
+		});
+		return changed ? next : lines;
+	});
+}
+
+function normalizeStockQty(value: number | undefined): number | null {
+	if (value === undefined || !Number.isFinite(value)) return null;
+	return Math.max(0, Math.trunc(value));
+}
+
 /** Set when `addToCart` succeeds; drives the global “added to bag” dialog. */
 export type AddedToCartModalPayload = {
 	productName: string;
@@ -123,46 +150,63 @@ export function addToCart(
 ): void {
 	const unitPrice = opts?.unitPrice ?? product.price;
 	const heroImageUploadId = product.heroImageUploadId ?? null;
+	const stockQty = normalizeStockQty(product.stockQty);
+	const requestQty = Math.max(1, Math.trunc(qty));
+	if (stockQty === 0) return;
+	let qtyAdded = 0;
 	cartLines.update((lines) => {
 		const i = lines.findIndex((l) => l.productId === product.id);
 		if (i >= 0) {
 			const next = [...lines];
+			const currentQty = next[i].qty;
+			const targetQty = stockQty == null ? currentQty + requestQty : Math.min(currentQty + requestQty, stockQty);
+			if (targetQty <= currentQty) return lines;
+			qtyAdded = targetQty - currentQty;
 			next[i] = {
 				...next[i],
-				qty: next[i].qty + qty,
-				heroImageUploadId: heroImageUploadId ?? next[i].heroImageUploadId ?? null
+				qty: targetQty,
+				heroImageUploadId: heroImageUploadId ?? next[i].heroImageUploadId ?? null,
+				stockQty: stockQty ?? next[i].stockQty
 			};
 			return next;
 		}
+		const initialQty = stockQty == null ? requestQty : Math.min(requestQty, stockQty);
+		if (initialQty < 1) return lines;
+		qtyAdded = initialQty;
 		return [
 			...lines,
 			{
 				productId: product.id,
-				qty,
+				qty: initialQty,
 				name: product.name,
 				price: unitPrice,
 				country: product.country,
 				region: product.region,
-				heroImageUploadId
+				heroImageUploadId,
+				stockQty: stockQty ?? undefined
 			}
 		];
 	});
+	if (qtyAdded < 1) return;
 	addedToCartModal.set({
 		productName: product.name,
 		productId: product.id,
 		unitPrice,
-		qtyAdded: qty,
+		qtyAdded,
 		heroImageUploadId
 	});
 }
 
-export function setLineQty(productId: number, qty: number): void {
-	if (qty <= 0) {
+export function setLineQty(productId: number, qty: number, maxQty?: number | null): void {
+	const normalizedMax =
+		maxQty != null && Number.isFinite(maxQty) ? Math.max(0, Math.trunc(maxQty)) : null;
+	const targetQty = normalizedMax == null ? qty : Math.min(qty, normalizedMax);
+	if (targetQty <= 0) {
 		removeFromCart(productId);
 		return;
 	}
 	cartLines.update((lines) =>
-		lines.map((l) => (l.productId === productId ? { ...l, qty } : l))
+		lines.map((l) => (l.productId === productId ? { ...l, qty: targetQty } : l))
 	);
 }
 

@@ -15,11 +15,13 @@
 	let {
 		open = false,
 		onClose,
-		catalogHeroImages = undefined
+		catalogHeroImages = undefined,
+		catalogStockQtys = undefined
 	}: {
 		open: boolean;
 		onClose: () => void;
 		catalogHeroImages?: Record<string, number | null>;
+		catalogStockQtys?: Record<string, number>;
 	} = $props();
 
 	const cartPath = resolve('/cart');
@@ -118,6 +120,13 @@
 					<ul class="flex flex-col gap-6">
 						{#each $cartLines as line (line.productId)}
 							{@const lineImg = resolveCartLineHeroImageHref(line, catalogHeroImages)}
+							{@const lineStockQty = line.stockQty ?? catalogStockQtys?.[String(line.productId)] ?? null}
+							{@const lineMaxQty =
+								typeof lineStockQty === 'number' && Number.isFinite(lineStockQty)
+									? Math.max(0, Math.trunc(lineStockQty))
+									: null}
+							{@const lineOutOfStock = lineMaxQty !== null && lineMaxQty <= 0}
+							{@const lineAtMax = lineMaxQty !== null && line.qty >= lineMaxQty}
 							<li class="flex gap-4 border-b border-mms-gold/[0.07] pb-6 last:border-0">
 								<div
 									class="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded border border-mms-gold/10 bg-mms-ink2/80"
@@ -142,6 +151,13 @@
 									</p>
 									<h3 class="font-mms-display text-lg leading-snug text-mms-cream">{line.name}</h3>
 									<p class="mt-2 font-mms-display text-mms-gold">{formatIdr(line.price)}</p>
+									{#if lineMaxQty !== null}
+										<p class="mt-1 text-[0.56rem] uppercase tracking-[0.16em] {lineOutOfStock
+											? 'text-red-400'
+											: 'text-mms-muted'}">
+											{lineOutOfStock ? 'Out of stock' : `In stock: ${lineMaxQty}`}
+										</p>
+									{/if}
 									<div class="mt-3 flex flex-wrap items-center gap-3">
 										<div
 											class="inline-flex items-center border border-mms-gold/20 font-mms-sans text-[0.65rem] text-mms-cream"
@@ -157,9 +173,10 @@
 											<span class="min-w-[2rem] text-center tabular-nums">{line.qty}</span>
 											<button
 												type="button"
-												class="px-2.5 py-1.5 transition hover:bg-mms-gold/15"
+												class="px-2.5 py-1.5 transition hover:bg-mms-gold/15 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
 												aria-label="Increase quantity"
-												onclick={() => setLineQty(line.productId, line.qty + 1)}
+												disabled={lineOutOfStock || lineAtMax}
+												onclick={() => setLineQty(line.productId, line.qty + 1, lineMaxQty)}
 											>
 												+
 											</button>

@@ -10,7 +10,8 @@
 		score,
 		qty,
 		onAdd,
-		added
+		added,
+		disabled = false
 	}: {
 		visible: boolean;
 		/** Primary product photo (public catalogue URL) */
@@ -22,6 +23,7 @@
 		qty: number;
 		onAdd: () => void;
 		added: boolean;
+		disabled?: boolean;
 	} = $props();
 </script>
 
@@ -62,10 +64,15 @@
 				type="button"
 				class="min-w-[10rem] px-6 py-3 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] transition md:min-w-[12rem] {added
 					? 'bg-emerald-700 text-white hover:bg-emerald-600'
-					: 'bg-mms-gold text-mms-ink hover:bg-mms-gold-light'}"
+					: 'bg-mms-gold text-mms-ink hover:bg-mms-gold-light'} disabled:cursor-not-allowed disabled:bg-mms-gold/20 disabled:text-mms-muted"
+				disabled={disabled}
 				onclick={onAdd}
 			>
-				{added ? 'Added ✓' : 'Add to cart'}
+				{#if disabled}
+					Out of stock
+				{:else}
+					{added ? 'Added ✓' : 'Add to cart'}
+				{/if}
 			</button>
 		</div>
 	</div>

@@ -45,6 +45,7 @@ export function catalogRowToProduct(row: CatalogProductRow): MmsCollectionProduc
 		rating: row.rating,
 		badge: (row.badge ?? '') as MmsProductBadge,
 		desc: row.desc,
+		stockQty: row.stockQty,
 		heroImageUploadId: row.heroImageUploadId ?? null
 	};
 }
@@ -228,4 +229,29 @@ export async function updateCatalogProduct(id: number, values: CatalogProductIns
 
 export async function deleteCatalogProduct(id: number): Promise<void> {
 	await db.delete(catalogProduct).where(eq(catalogProduct.id, id));
+}
+
+export async function restockCatalogProductsByThreshold(
+	threshold: number,
+	targetStock: number
+): Promise<{ updated: number; addedUnits: number }> {
+	const rows = await db
+		.select({ id: catalogProduct.id, stockQty: catalogProduct.stockQty })
+		.from(catalogProduct)
+		.orderBy(asc(catalogProduct.id));
+
+	const candidates = rows.filter((row) => row.stockQty <= threshold);
+	if (candidates.length === 0) {
+		return { updated: 0, addedUnits: 0 };
+	}
+
+	const ids = candidates.map((c) => c.id);
+	const addedUnits = candidates.reduce((sum, c) => sum + Math.max(0, targetStock - c.stockQty), 0);
+
+	await db
+		.update(catalogProduct)
+		.set({ stockQty: targetStock, updatedAt: new Date() })
+		.where(inArray(catalogProduct.id, ids));
+
+	return { updated: candidates.length, addedUnits };
 }

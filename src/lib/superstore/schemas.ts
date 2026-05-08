@@ -101,6 +101,16 @@ export const catalogProductDeleteSchema = z.object({
 	id: z.preprocess((v) => Number(v), z.int().positive())
 });
 
+export const inventoryRestockSchema = z
+	.object({
+		threshold: coalesceInt(0, 1_000_000, 5),
+		targetStock: coalesceInt(0, 1_000_000, 20)
+	})
+	.refine((v) => v.targetStock >= v.threshold, {
+		message: 'Target stock must be greater than or equal to threshold.',
+		path: ['targetStock']
+	});
+
 /** One row in exported `catalog-export-v1.json` (import uses the same shape). */
 export const catalogExportProductSchema = z.object({
 	slug: z.string().trim().max(200),

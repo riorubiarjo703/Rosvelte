@@ -21,6 +21,8 @@ export type MmsCollectionProduct = {
 	rating: number;
 	badge: MmsProductBadge;
 	desc: string;
+	/** Available units for sale; `0` means out of stock. Undefined keeps legacy seed behavior. */
+	stockQty?: number;
 	/** When set, storefront uses `/catalog/image/{id}` (published products only). Synced to first gallery slot for DB-backed products. */
 	heroImageUploadId?: number | null;
 	/** Ordered public gallery upload ids (DB-backed PDP); omit for static seed products. */
