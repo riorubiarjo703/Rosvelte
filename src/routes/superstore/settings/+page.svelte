@@ -8,6 +8,16 @@
 		storeTaxRate
 	} from '$lib/store/mms-store-settings';
 
+	let { data, form } = $props();
+
+	let taxDbInput = $state('');
+	$effect(() => {
+		taxDbInput = String(data.serverTaxRatePercent);
+	});
+	let enableXendit = $state(true);
+	$effect(() => {
+		enableXendit = data.xenditPaymentEnabled;
+	});
 	let newOrderAlerts = $state(true);
 	let lowStock = $state(true);
 	let newCustomer = $state(false);
@@ -214,6 +224,161 @@
 	</section>
 
 	<section class="bg-mms-ink2 p-6">
+		<h3 class="mb-2 flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-mms-gold-dim uppercase">
+			Payment secrets (Xendit)
+			<span class="h-px flex-1 bg-mms-gold/[0.08]"></span>
+		</h3>
+		<p class="mb-5 text-[0.72rem] leading-relaxed text-mms-muted">
+			Store API credentials in the database (staff-only). Checkout and webhooks read these first; optional
+			<code class="text-mms-gold/90">.env</code> values are used only as a fallback when nothing is saved here.
+		</p>
+		<p class="mb-5 rounded border border-mms-gold/12 bg-mms-ink3/60 px-4 py-3 text-[0.68rem] leading-relaxed text-mms-muted">
+			<strong class="font-medium text-mms-cream/90">Secrets stay off the wire:</strong> the real API key and webhook token are
+			never loaded into this page. When a value exists in the database you’ll see a bullet mask plus <span
+				class="text-emerald-400/85">— saved</span>, and an optional field below if you want to replace them.
+		</p>
+
+		{#if form?.paymentSaved}
+			<p class="mb-4 text-[0.72rem] text-emerald-400/90" role="status">Payment settings saved.</p>
+		{/if}
+		{#if form?.paymentCleared}
+			<p class="mb-4 text-[0.72rem] text-emerald-400/90" role="status">Stored secrets removed from the database.</p>
+		{/if}
+		{#if form?.paymentError}
+			<p class="mb-4 text-[0.72rem] text-[#e07272]" role="alert">{form.paymentError}</p>
+		{/if}
+
+		<form method="POST" action="?/savePaymentSecrets" class="space-y-4">
+			<label class="flex cursor-pointer items-start gap-3 rounded border border-mms-gold/15 bg-mms-ink3/80 p-4">
+				<input
+					type="checkbox"
+					name="xenditEnabled"
+					bind:checked={enableXendit}
+					class="mt-0.5 size-4 shrink-0 accent-mms-gold"
+				/>
+				<span class="min-w-0">
+					<span class="block text-[0.72rem] font-medium tracking-[0.06em] text-mms-cream">
+						Enable Xendit checkout
+					</span>
+					<span class="mt-1 block text-[0.62rem] leading-relaxed text-mms-muted">
+						When off, the storefront hides online payment and checkout is blocked. Secret fields below are shown only
+						when enabled.
+					</span>
+				</span>
+			</label>
+
+			{#if enableXendit}
+			<div class="grid gap-4 md:grid-cols-2">
+				<div class="flex flex-col gap-1">
+					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xsk">
+						Xendit secret API key
+						{#if data.paymentSecrets.hasXenditSecretKey}
+							<span class="text-emerald-400/80"> — saved</span>
+						{/if}
+					</label>
+					{#if data.paymentSecrets.hasXenditSecretKey}
+						<div
+							class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+							aria-hidden="true"
+						>
+							••••••••••••••••••••••
+						</div>
+					{/if}
+					<input
+						id="xsk"
+						name="xenditSecretKey"
+						type="password"
+						autocomplete="off"
+						class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+						placeholder={data.paymentSecrets.hasXenditSecretKey
+							? 'Optional: new key to replace the one above'
+							: 'xnd_development_…'}
+					/>
+					{#if data.paymentSecrets.hasXenditSecretKey}
+						<p class="text-[0.6rem] leading-relaxed text-mms-muted">
+							Mask is only a visual placeholder; the real key never leaves the server. Leave the field empty to keep
+							what is stored.
+						</p>
+					{/if}
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xwh">
+						Webhook verification token
+						{#if data.paymentSecrets.hasWebhookToken}
+							<span class="text-emerald-400/80"> — saved</span>
+						{/if}
+					</label>
+					{#if data.paymentSecrets.hasWebhookToken}
+						<div
+							class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+							aria-hidden="true"
+						>
+							••••••••••••••••••••••
+						</div>
+					{/if}
+					<input
+						id="xwh"
+						name="xenditWebhookToken"
+						type="password"
+						autocomplete="off"
+						class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+						placeholder={data.paymentSecrets.hasWebhookToken
+							? 'Optional: new token to replace the one above'
+							: 'Callback token from Dashboard'}
+					/>
+					{#if data.paymentSecrets.hasWebhookToken}
+						<p class="text-[0.6rem] leading-relaxed text-mms-muted">
+							Same as API key: bullets are not your token—only confirmation that one is saved.
+						</p>
+					{/if}
+				</div>
+				<div class="flex flex-col gap-1 md:col-span-2">
+					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="taxsrv">
+						Checkout tax rate (%)
+					</label>
+					<input
+						id="taxsrv"
+						name="storeTaxRatePercent"
+						type="number"
+						min="0"
+						max="100"
+						step="0.1"
+						class="max-w-xs border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+						bind:value={taxDbInput}
+					/>
+					<p class="text-[0.62rem] text-mms-muted">
+						Applied on the server for checkout totals. Matches storefront preview when set here.
+					</p>
+				</div>
+			</div>
+			{:else}
+				<p class="rounded border border-dashed border-mms-gold/20 bg-mms-ink3/50 px-4 py-3 text-[0.68rem] text-mms-muted">
+					Enable Xendit above to edit API keys and checkout tax rate.
+				</p>
+			{/if}
+			<button
+				type="submit"
+				class="rounded bg-mms-gold px-5 py-2.5 text-[0.62rem] font-medium tracking-[0.12em] text-mms-ink uppercase hover:bg-mms-gold-light"
+			>
+				Save payment settings
+			</button>
+		</form>
+
+		<form method="POST" action="?/clearPaymentSecrets" class="mt-8 border-t border-mms-gold/[0.08] pt-6">
+			<input type="hidden" name="confirmClear" value="true" />
+			<p class="mb-3 text-[0.68rem] text-mms-muted">
+				Remove Xendit keys, webhook token, and saved tax rate from the database (environment fallback still applies if set).
+			</p>
+			<button
+				type="submit"
+				class="rounded border border-[#c05050]/40 px-5 py-2.5 text-[0.62rem] tracking-[0.12em] text-[#e08080] uppercase hover:border-[#e07070] hover:text-[#ff9e9e]"
+			>
+				Clear stored payment secrets
+			</button>
+		</form>
+	</section>
+
+	<section class="bg-mms-ink2 p-6">
 		<h3 class="mb-2 text-[0.65rem] tracking-[0.2em] text-mms-gold-dim uppercase">Notifications</h3>
 		<div class="divide-y divide-mms-gold/[0.06]">
 			<div class="flex items-center justify-between gap-4 py-3">
@@ -363,4 +528,6 @@
 	</div>
 </div>
 
-<p class="mt-4 text-[0.72rem] text-mms-muted">Preview only — persist settings via your config API when ready.</p>
+<p class="mt-4 text-[0.72rem] text-mms-muted">
+	Brand / tax preview uses browser storage; payment credentials use Superstore → Settings below when saved.
+</p>

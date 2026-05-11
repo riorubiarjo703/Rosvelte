@@ -1,7 +1,7 @@
 import { markStorefrontOrderPaidByExternalId, markStorefrontOrderPaymentStatus } from '$lib/server/orders/repo';
+import { resolveXenditWebhookToken } from '$lib/server/superstore/payment-config';
 import { json } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
-import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
 function safeEq(a: string, b: string): boolean {
@@ -12,7 +12,7 @@ function safeEq(a: string, b: string): boolean {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	const expected = env.XENDIT_WEBHOOK_TOKEN?.trim();
+	const expected = (await resolveXenditWebhookToken()) ?? '';
 	const token = request.headers.get('x-callback-token');
 	if (!expected || !token || !safeEq(token, expected)) {
 		return new Response('Unauthorized', { status: 401 });

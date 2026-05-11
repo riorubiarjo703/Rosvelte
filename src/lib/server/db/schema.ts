@@ -44,6 +44,13 @@ export const storefrontOrder = pgTable('storefront_order', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+/** Staff-editable secrets (Xendit API key, webhook token, checkout tax %). Not exposed to storefront JSON. */
+export const superstoreSecret = pgTable('superstore_secret', {
+	key: text('key').primaryKey(),
+	value: text('value').notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 export const task = pgTable('task', {
 	id: serial('id').primaryKey(),
 	title: text('title').notNull(),

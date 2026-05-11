@@ -47,7 +47,10 @@
 	const discountedSubtotal = $derived(Math.max($cartSubtotal - promoDiscount, 0));
 	const taxAmount = $derived(Math.round((discountedSubtotal * taxRatePercent) / 100));
 	const totalAmount = $derived(discountedSubtotal + taxAmount + shippingCost);
-	const checkoutDisabled = $derived(!ageConfirmed || $cartLines.length === 0);
+	const payBlocked = $derived(!data.xenditPaymentEnabled);
+	const checkoutDisabled = $derived(
+		!ageConfirmed || $cartLines.length === 0 || !data.xenditPaymentEnabled
+	);
 
 	const cartLinesJson = $derived(
 		JSON.stringify($cartLines.map((l) => ({ productId: l.productId, qty: l.qty })))
@@ -97,6 +100,11 @@
 		</div>
 	{:else}
 		<form method="POST" action="?/checkout" class="checkout-form">
+			{#if payBlocked}
+				<div class="checkout-notice" role="status">
+					Online payment is turned off in store settings. Please contact us to complete your order.
+				</div>
+			{/if}
 			{#if form?.error}
 				<div class="checkout-error" role="alert">{form.error}</div>
 			{/if}
@@ -260,11 +268,18 @@
 				<div class="checkout-section">
 					<span class="section-num">04</span>
 					<h2 class="section-title">Payment <em>Method</em></h2>
+					{#if data.xenditPaymentEnabled}
 					<div class="pay-tabs">
-						<button class="pay-tab" class:active={selectedPayment === 'card'} onclick={() => (selectedPayment = 'card')}>
+						<button
+							type="button"
+							class="pay-tab"
+							class:active={selectedPayment === 'card'}
+							onclick={() => (selectedPayment = 'card')}
+						>
 							Card
 						</button>
 						<button
+							type="button"
 							class="pay-tab"
 							class:active={selectedPayment === 'transfer'}
 							onclick={() => (selectedPayment = 'transfer')}
@@ -272,6 +287,7 @@
 							Bank Transfer
 						</button>
 						<button
+							type="button"
 							class="pay-tab"
 							class:active={selectedPayment === 'ewallet'}
 							onclick={() => (selectedPayment = 'ewallet')}
@@ -420,6 +436,12 @@
 							</button>
 						</div>
 					{/if}
+					{:else}
+						<p class="payment-unavailable">
+							Hosted Xendit payment is disabled for this store. You can still review your details above; use the
+							summary message or contact the store to arrange payment.
+						</p>
+					{/if}
 				</div>
 
 				<div class="form-divider"></div>
@@ -486,8 +508,13 @@
 					</div>
 
 					<div class="summary-cta">
-						<button class="btn-checkout" type="submit" disabled={checkoutDisabled}>
-							Pay securely with Xendit
+						<button
+							class="btn-checkout"
+							type="submit"
+							disabled={checkoutDisabled}
+							title={payBlocked ? 'Online payment is disabled' : undefined}
+						>
+							{payBlocked ? 'Online payment unavailable' : 'Pay securely with Xendit'}
 						</button>
 					</div>
 				</div>
@@ -505,6 +532,26 @@
 	.checkout-form {
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	.checkout-notice {
+		margin: 0 3rem 1rem;
+		padding: 0.85rem 1rem;
+		border: 1px solid rgba(212, 175, 120, 0.35);
+		background: rgba(212, 175, 120, 0.06);
+		color: rgba(230, 220, 200, 0.92);
+		font-size: 0.88rem;
+		line-height: 1.45;
+	}
+
+	.payment-unavailable {
+		margin: 0;
+		padding: 1rem 1.1rem;
+		border: 1px dashed rgba(212, 175, 120, 0.25);
+		background: rgba(0, 0, 0, 0.2);
+		color: rgba(200, 190, 175, 0.85);
+		font-size: 0.88rem;
+		line-height: 1.5;
 	}
 
 	.checkout-error {
@@ -1108,131 +1155,6 @@
 		text-transform: uppercase;
 	}
 
-	.success-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 80;
-		display: grid;
-		place-items: center;
-		background: rgba(13, 11, 8, 0.96);
-	}
-
-	.success-box {
-		padding: 3rem 2.4rem;
-		text-align: center;
-	}
-
-	.success-icon {
-		width: 70px;
-		height: 70px;
-		margin: 0 auto 1.8rem;
-		border-radius: 50%;
-		border: 1.5px solid var(--gold);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.success-icon svg {
-		width: 30px;
-		height: 30px;
-		stroke: var(--gold);
-		fill: none;
-		stroke-width: 2;
-	}
-
-	.success-title {
-		font-family: 'Cormorant Garamond', serif;
-		font-size: 4rem;
-		font-weight: 300;
-		line-height: 1;
-		margin-bottom: 1.1rem;
-	}
-
-	.success-title em {
-		font-style: italic;
-		color: var(--gold-light);
-	}
-
-	.success-sub {
-		font-size: 0.82rem;
-		color: var(--muted);
-		line-height: 1.9;
-		margin-bottom: 1.8rem;
-	}
-
-	.success-order {
-		border: 1px solid rgba(201, 168, 76, 0.15);
-		background: var(--ink2);
-		padding: 1.2rem 1.8rem;
-		text-align: left;
-		margin-bottom: 1.8rem;
-	}
-
-	.success-order-row {
-		display: flex;
-		justify-content: space-between;
-		gap: 0.8rem;
-		font-size: 0.75rem;
-		padding: 0.44rem 0;
-		border-bottom: 1px solid rgba(201, 168, 76, 0.04);
-	}
-
-	.success-order-row:last-child {
-		border-bottom: 0;
-	}
-
-	.success-order-row span:first-child {
-		color: var(--muted);
-	}
-
-	.success-order-row span:last-child {
-		color: var(--cream);
-		text-align: right;
-	}
-
-	.order-gold {
-		color: var(--gold) !important;
-	}
-
-	.success-btns {
-		display: flex;
-		justify-content: center;
-		gap: 0.8rem;
-	}
-
-	.btn-primary-sm {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.9rem 1.9rem;
-		background: var(--gold);
-		border: 0;
-		color: var(--ink);
-		font-size: 0.65rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-	}
-
-	.btn-ghost-sm {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.9rem 1.7rem;
-		background: transparent;
-		border: 1px solid rgba(201, 168, 76, 0.2);
-		color: var(--muted);
-		font-size: 0.65rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		text-decoration: none;
-	}
-
-	.btn-ghost-sm:hover {
-		border-color: var(--gold);
-		color: var(--gold);
-	}
-
 	@media (max-width: 980px) {
 		nav {
 			padding: 1rem 1.5rem;
@@ -1261,18 +1183,6 @@
 
 		.form-group.full {
 			grid-column: span 1;
-		}
-
-		.success-box {
-			padding: 2rem 1.2rem;
-		}
-
-		.success-title {
-			font-size: 3rem;
-		}
-
-		.success-btns {
-			flex-direction: column;
 		}
 	}
 </style>

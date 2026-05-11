@@ -1,13 +1,8 @@
 import { Xendit } from 'xendit-node';
-import { env } from '$env/dynamic/private';
+import { resolveXenditSecretKey } from '$lib/server/superstore/payment-config';
 
-export function getXenditSecretKey(): string | undefined {
-	const key = env.XENDIT_SECRET_KEY?.trim();
-	return key || undefined;
-}
-
-export function getXenditClient(): Xendit | null {
-	const secretKey = getXenditSecretKey();
+export async function getXenditClient(): Promise<Xendit | null> {
+	const secretKey = await resolveXenditSecretKey();
 	if (!secretKey) return null;
 	return new Xendit({ secretKey });
 }

@@ -182,6 +182,42 @@ WHERE cp.hero_image_upload_id IS NOT NULL
 	SELECT 1 FROM "catalog_product_image" i WHERE i.product_id = cp.id
   );
 
+-- Staff secrets (Superstore → Settings → Payment). Required for Xendit keys stored in DB.
+CREATE TABLE IF NOT EXISTS "superstore_secret" (
+	"key" text PRIMARY KEY NOT NULL,
+	"value" text NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+-- Storefront checkout orders (Xendit, admin list). Matches `src/lib/server/db/schema.ts`.
+CREATE TABLE IF NOT EXISTS "storefront_order" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"order_code" text NOT NULL,
+	"customer_name" text NOT NULL,
+	"customer_email" text NOT NULL,
+	"phone" text,
+	"product_summary" text NOT NULL,
+	"total_idr" integer NOT NULL,
+	"subtotal_idr" integer DEFAULT 0 NOT NULL,
+	"promo_discount_idr" integer DEFAULT 0 NOT NULL,
+	"shipping_idr" integer DEFAULT 0 NOT NULL,
+	"tax_idr" integer DEFAULT 0 NOT NULL,
+	"shipping_label" text DEFAULT '' NOT NULL,
+	"address_label" text DEFAULT '' NOT NULL,
+	"lines_payload" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"xendit_external_id" text,
+	"xendit_invoice_id" text,
+	"checkout_invoice_url" text,
+	"payment_status" text DEFAULT 'none' NOT NULL,
+	"currency" text DEFAULT 'IDR' NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"ordered_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "storefront_order_order_code_unique" UNIQUE ("order_code"),
+	CONSTRAINT "storefront_order_xendit_external_id_unique" UNIQUE ("xendit_external_id")
+);
+
 CREATE TABLE IF NOT EXISTS "journal_post" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"legacy_article_id" integer NOT NULL,

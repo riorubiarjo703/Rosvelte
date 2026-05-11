@@ -1,6 +1,5 @@
 import {
 	addressLabel,
-	DEFAULT_STORE_TAX_RATE_PERCENT,
 	shippingLabel,
 	type AddressOption,
 	type ShippingOption
@@ -15,16 +14,12 @@ import {
 import { createHostedCheckoutInvoice } from '$lib/server/xendit/create-checkout-invoice';
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
-import { env } from '$env/dynamic/private';
+import {
+	resolveStoreTaxRatePercent,
+	resolveXenditPaymentEnabled
+} from '$lib/server/superstore/payment-config';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
-
-function parseTaxRatePercent(): number {
-	const raw = env.STORE_TAX_RATE?.trim();
-	if (!raw) return DEFAULT_STORE_TAX_RATE_PERCENT;
-	const n = Number(raw);
-	return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : DEFAULT_STORE_TAX_RATE_PERCENT;
-}
 
 const shippingOptions: ShippingOption[] = ['standard', 'express', 'same', 'free'];
 const addressOptions: AddressOption[] = ['home', 'office', 'new'];
@@ -39,12 +34,19 @@ const checkoutSchema = z.object({
 });
 
 export const load: PageServerLoad = async () => ({
-	taxRatePercent: parseTaxRatePercent()
+	taxRatePercent: await resolveStoreTaxRatePercent(),
+	xenditPaymentEnabled: await resolveXenditPaymentEnabled()
 });
 
 export const actions = {
 	checkout: async ({ request, url }) => {
-		const taxRatePercent = parseTaxRatePercent();
+		const [taxRatePercent, xenditOk] = await Promise.all([
+			resolveStoreTaxRatePercent(),
+			resolveXenditPaymentEnabled()
+		]);
+		if (!xenditOk) {
+			return fail(403, { error: 'Online payment is currently unavailable.' });
+		}
 		const fd = await request.formData();
 		const parsed = checkoutSchema.safeParse({
 			firstName: fd.get('firstName'),
@@ -137,7 +139,7 @@ export const actions = {
 			console.error('[checkout] xendit', e);
 			await deleteStorefrontOrderById(orderId).catch(() => {});
 			const msg =
-				e instanceof Error && e.message.includes('XENDIT_SECRET_KEY')
+				e instanceof Error && e.message.includes('not configured')
 					? 'Payments are not configured on this environment.'
 					: 'Could not start payment. Try again.';
 			return fail(500, { error: msg });

@@ -10,8 +10,8 @@ export async function createHostedCheckoutInvoice(args: {
 	failureRedirectUrl: string;
 	items?: StorefrontOrderLinePayload[];
 }): Promise<{ invoiceUrl: string; invoiceId: string }> {
-	const client = getXenditClient();
-	if (!client) throw new Error('XENDIT_SECRET_KEY is not configured');
+	const client = await getXenditClient();
+	if (!client) throw new Error('Xendit is not configured (no secret API key)');
 
 	const items =
 		args.items?.map((line) => ({
