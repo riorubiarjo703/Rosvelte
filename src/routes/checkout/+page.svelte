@@ -8,59 +8,50 @@
 		formatIdr,
 		resolveCartLineHeroImageHref
 	} from '$lib/cart/mms-cart';
-	import { storeTaxRate } from '$lib/store/mms-store-settings';
+	import {
+		PROMO_GOLDMEMBER_DISCOUNT_IDR,
+		SHIPPING_COST_MAP,
+		type AddressOption,
+		type ShippingOption
+	} from '$lib/checkout/mms-checkout-pricing';
 
-	type ShippingOption = 'standard' | 'express' | 'same' | 'free';
-	type AddressOption = 'home' | 'office' | 'new';
 	type PaymentOption = 'card' | 'transfer' | 'ewallet';
-type BankOption = 'bca' | 'bni' | 'mandiri' | 'bri';
-type WalletOption = 'gopay' | 'ovo' | 'dana' | 'shopeepay' | 'linkaja' | 'qris';
+	type BankOption = 'bca' | 'bni' | 'mandiri' | 'bri';
+	type WalletOption = 'gopay' | 'ovo' | 'dana' | 'shopeepay' | 'linkaja' | 'qris';
+
+	let { data, form } = $props();
 
 	const cartPath = resolve('/cart');
 	const collectionsPath = resolve('/collections');
 	const catalogHeroImages = $derived(page.data.catalogHeroImages);
 
-	const shippingCostMap: Record<ShippingOption, number> = {
-		standard: 35_000,
-		express: 85_000,
-		same: 55_000,
-		free: 0
-	};
+	let firstName = $state('Budi');
+	let lastName = $state('Santoso');
+	let email = $state('budi@email.com');
+	let phone = $state('+62 812 3456 7890');
 
 	let selectedAddress = $state<AddressOption>('home');
 	let selectedShipping = $state<ShippingOption>('standard');
 	let selectedPayment = $state<PaymentOption>('card');
-let selectedBank = $state<BankOption>('bca');
-let selectedWallet = $state<WalletOption>('gopay');
+	let selectedBank = $state<BankOption>('bca');
+	let selectedWallet = $state<WalletOption>('gopay');
 	let promoCode = $state('');
-	let promoApplied = $state(false);
+	const promoApplied = $derived(promoCode.trim().toUpperCase() === 'GOLDMEMBER');
 	let ageConfirmed = $state(false);
 	let cardNumber = $state('');
-	let showSuccess = $state(false);
-let orderNumber = $state('ORD-2843');
 
-	const promoDiscount = $derived(promoApplied ? 500_000 : 0);
-	const shippingCost = $derived(shippingCostMap[selectedShipping]);
+	const taxRatePercent = $derived(data.taxRatePercent);
+
+	const promoDiscount = $derived(promoApplied ? PROMO_GOLDMEMBER_DISCOUNT_IDR : 0);
+	const shippingCost = $derived(SHIPPING_COST_MAP[selectedShipping]);
 	const discountedSubtotal = $derived(Math.max($cartSubtotal - promoDiscount, 0));
-	const taxAmount = $derived(Math.round((discountedSubtotal * $storeTaxRate) / 100));
+	const taxAmount = $derived(Math.round((discountedSubtotal * taxRatePercent) / 100));
 	const totalAmount = $derived(discountedSubtotal + taxAmount + shippingCost);
 	const checkoutDisabled = $derived(!ageConfirmed || $cartLines.length === 0);
-const shippingLabel = $derived(
-	selectedShipping === 'standard'
-		? 'JNE Regular - 3-5 days'
-		: selectedShipping === 'express'
-			? 'JNE YES - next day'
-			: selectedShipping === 'same'
-				? 'Gojek Instant - same day'
-				: 'Complimentary delivery'
-);
-const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2).join(' - '));
 
-	function applyPromo() {
-		if (promoCode.trim().toUpperCase() === 'GOLDMEMBER') {
-			promoApplied = true;
-		}
-	}
+	const cartLinesJson = $derived(
+		JSON.stringify($cartLines.map((l) => ({ productId: l.productId, qty: l.qty })))
+	);
 
 	function handleCardInput(value: string) {
 		cardNumber = value
@@ -68,12 +59,6 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 			.replace(/(.{4})/g, '$1 ')
 			.trim()
 			.slice(0, 19);
-	}
-
-	function placeOrder() {
-		if (checkoutDisabled) return;
-	orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-		showSuccess = true;
 	}
 </script>
 
@@ -111,7 +96,14 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 			<a href={collectionsPath}>Browse collection</a>
 		</div>
 	{:else}
-		<div class="checkout-wrap">
+		<form method="POST" action="?/checkout" class="checkout-form">
+			{#if form?.error}
+				<div class="checkout-error" role="alert">{form.error}</div>
+			{/if}
+			<input type="hidden" name="cartLines" value={cartLinesJson} />
+			<input type="hidden" name="shipping" value={selectedShipping} />
+			<input type="hidden" name="address" value={selectedAddress} />
+			<div class="checkout-wrap">
 			<div>
 				<div class="checkout-section">
 					<span class="section-num">01</span>
@@ -119,19 +111,45 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 					<div class="form-grid">
 						<div class="form-group">
 							<label for="checkout-first-name">First Name</label>
-							<input id="checkout-first-name" class="form-input" value="Budi" />
+							<input
+								id="checkout-first-name"
+								class="form-input"
+								name="firstName"
+								autocomplete="given-name"
+								bind:value={firstName}
+							/>
 						</div>
 						<div class="form-group">
 							<label for="checkout-last-name">Last Name</label>
-							<input id="checkout-last-name" class="form-input" value="Santoso" />
+							<input
+								id="checkout-last-name"
+								class="form-input"
+								name="lastName"
+								autocomplete="family-name"
+								bind:value={lastName}
+							/>
 						</div>
 						<div class="form-group">
 							<label for="checkout-email">Email Address</label>
-							<input id="checkout-email" class="form-input" type="email" value="budi@email.com" />
+							<input
+								id="checkout-email"
+								class="form-input"
+								type="email"
+								name="email"
+								autocomplete="email"
+								bind:value={email}
+							/>
 						</div>
 						<div class="form-group">
 							<label for="checkout-phone">Phone Number</label>
-							<input id="checkout-phone" class="form-input" type="tel" value="+62 812 3456 7890" />
+							<input
+								id="checkout-phone"
+								class="form-input"
+								type="tel"
+								name="phone"
+								autocomplete="tel"
+								bind:value={phone}
+							/>
 						</div>
 					</div>
 				</div>
@@ -193,7 +211,7 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 								<div class="radio-title">Standard - JNE Regular</div>
 								<div class="radio-sub">3-5 business days</div>
 							</div>
-							<div class="radio-price">{formatIdr(shippingCostMap.standard)}</div>
+							<div class="radio-price">{formatIdr(SHIPPING_COST_MAP.standard)}</div>
 						</button>
 						<button
 							type="button"
@@ -206,7 +224,7 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 								<div class="radio-title">Express - JNE YES</div>
 								<div class="radio-sub">Next business day</div>
 							</div>
-							<div class="radio-price">{formatIdr(shippingCostMap.express)}</div>
+							<div class="radio-price">{formatIdr(SHIPPING_COST_MAP.express)}</div>
 						</button>
 						<button
 							type="button"
@@ -219,7 +237,7 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 								<div class="radio-title">Same-Day - Gojek Instant</div>
 								<div class="radio-sub">Within 4 hours</div>
 							</div>
-							<div class="radio-price">{formatIdr(shippingCostMap.same)}</div>
+							<div class="radio-price">{formatIdr(SHIPPING_COST_MAP.same)}</div>
 						</button>
 						<button
 							type="button"
@@ -410,7 +428,7 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 					<span class="section-num">05</span>
 					<h2 class="section-title">Age <em>Verification</em></h2>
 					<label class="check-row">
-						<input type="checkbox" bind:checked={ageConfirmed} />
+						<input type="checkbox" name="ageConfirmed" bind:checked={ageConfirmed} />
 						<span>I confirm I am 21 years old or older and agree to terms and privacy policy.</span>
 					</label>
 				</div>
@@ -445,8 +463,12 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 					</div>
 
 					<div class="promo-wrap">
-						<input class="promo-input" placeholder="Promo code" bind:value={promoCode} />
-						<button class="promo-btn" type="button" onclick={applyPromo}>Apply</button>
+						<input
+							class="promo-input"
+							placeholder="Promo code"
+							name="promoCode"
+							bind:value={promoCode}
+						/>
 					</div>
 
 					<div class="summary-totals">
@@ -455,7 +477,7 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 							<div class="sum-row promo"><span>Promo</span><span>- {formatIdr(promoDiscount)}</span></div>
 						{/if}
 						<div class="sum-row"><span>Shipping</span><span>{shippingCost === 0 ? 'Free' : formatIdr(shippingCost)}</span></div>
-						<div class="sum-row"><span>Tax ({$storeTaxRate}%)</span><span>{formatIdr(taxAmount)}</span></div>
+						<div class="sum-row"><span>Tax ({taxRatePercent}%)</span><span>{formatIdr(taxAmount)}</span></div>
 					</div>
 
 					<div class="sum-total-row">
@@ -464,59 +486,41 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 					</div>
 
 					<div class="summary-cta">
-						<button class="btn-checkout" disabled={checkoutDisabled} onclick={placeOrder}>
-							Confirm & Place Order
+						<button class="btn-checkout" type="submit" disabled={checkoutDisabled}>
+							Pay securely with Xendit
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
-	{/if}
-
-	{#if showSuccess}
-		<div class="success-overlay">
-			<div class="success-box">
-				<div class="success-icon">
-					<svg viewBox="0 0 24 24" aria-hidden="true">
-						<polyline points="20 6 9 17 4 12"></polyline>
-					</svg>
-				</div>
-				<h2 class="success-title">Order <em>Confirmed</em></h2>
-				<p class="success-sub">
-					Thank you, Budi. Your order has been received and is being prepared.
-					<br />
-					You will receive a confirmation email with tracking details shortly.
-				</p>
-				<div class="success-order">
-					<div class="success-order-row">
-						<span>Order Number</span>
-						<span class="order-gold">#{orderNumber}</span>
-					</div>
-					<div class="success-order-row">
-						<span>Items</span>
-						<span>{orderItemsLabel || 'Selection'}</span>
-					</div>
-					<div class="success-order-row">
-						<span>Delivery</span>
-						<span>{shippingLabel}</span>
-					</div>
-					<div class="success-order-row">
-						<span>Total Paid</span>
-						<span class="order-gold">{formatIdr(totalAmount)}</span>
-					</div>
-				</div>
-				<div class="success-btns">
-					<button type="button" class="btn-primary-sm" onclick={() => (showSuccess = false)}>Track order</button>
-					<a href={collectionsPath} class="btn-ghost-sm">Continue shopping</a>
-				</div>
-			</div>
-		</div>
+		</form>
 	{/if}
 </div>
 
 <style>
 	:global(body) {
 		background: #0d0b08;
+	}
+
+	.checkout-form {
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.checkout-error {
+		margin: 0 3rem 1rem;
+		padding: 0.85rem 1rem;
+		border: 1px solid rgba(220, 90, 70, 0.45);
+		background: rgba(220, 90, 70, 0.08);
+		color: #e8c4be;
+		font-size: 0.78rem;
+		line-height: 1.45;
+	}
+
+	@media (max-width: 980px) {
+		.checkout-error {
+			margin: 0 1.5rem 1rem;
+		}
 	}
 
 	.checkout-page {
@@ -1005,27 +1009,16 @@ const orderItemsLabel = $derived($cartLines.map((line) => line.name).slice(0, 2)
 	.promo-wrap {
 		padding: 1rem 1.4rem;
 		border-bottom: 1px solid rgba(201, 168, 76, 0.06);
-		display: flex;
 	}
 
 	.promo-input {
-		flex: 1;
+		width: 100%;
+		box-sizing: border-box;
 		background: var(--ink3);
 		border: 1px solid rgba(201, 168, 76, 0.12);
-		border-right: 0;
 		padding: 0.65rem 0.85rem;
 		color: var(--cream);
 		font-size: 0.74rem;
-	}
-
-	.promo-btn {
-		background: transparent;
-		border: 1px solid rgba(201, 168, 76, 0.2);
-		color: var(--gold);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		padding: 0 0.8rem;
 	}
 
 	.sum-row {

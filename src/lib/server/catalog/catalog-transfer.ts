@@ -4,6 +4,7 @@ import {
 	type CatalogExportProductRow
 } from '$lib/superstore/schemas';
 import { MAX_CATALOG_PRODUCT_IMAGES, padCatalogImageSlots } from './product-image-slots';
+import { formatZodIssues } from '$lib/server/format-zod-issues';
 
 export const CATALOG_EXPORT_VERSION = 1 as const;
 
@@ -163,9 +164,7 @@ export function tabularRowToCatalogRow(
 
 	const parsed = catalogExportProductSchema.safeParse(candidate);
 	if (!parsed.success) {
-		const errs = parsed.error.issues
-			.map((i) => `${i.path.join('.') || 'row'}: ${i.message}`)
-			.join('; ');
+		const errs = formatZodIssues(parsed.error);
 		return { error: errs || 'invalid row' };
 	}
 	return { value: parsed.data };

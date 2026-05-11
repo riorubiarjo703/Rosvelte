@@ -8,6 +8,13 @@
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
+	const journalExportHref = $derived(
+		resolvedLocalizedHref('/superstore/journal/export' as Pathname)
+	);
+	const journalExportJsonHref = $derived(`${journalExportHref}?format=json`);
+	const journalExportCsvHref = $derived(`${journalExportHref}?format=csv`);
+	const journalExportXlsxHref = $derived(`${journalExportHref}?format=xlsx`);
+
 	let filterQuery = $state('');
 	let filterCategory = $state('');
 	let filterStatus = $state<'all' | 'active' | 'pending' | 'out'>('all');
@@ -47,15 +54,85 @@
 	{#if form?.message}
 		<p class="border-b border-mms-gold/[0.06] px-6 py-3 text-[0.72rem] text-red-400">{form.message}</p>
 	{/if}
+	{#if form?.importResult}
+		<div
+			class="mx-6 mt-4 rounded border border-emerald-500/25 bg-emerald-950/20 px-4 py-3 text-[0.72rem] leading-relaxed text-emerald-100"
+		>
+			Imported <strong>{form.importResult.created}</strong> new and updated <strong>{form.importResult.updated}</strong> by
+			legacy article id.
+			{#if form.importResult.errors.length > 0}
+				<p class="mt-2 text-[0.65rem] text-amber-200/90">Some rows failed:</p>
+				<ul class="mt-1 max-h-40 list-inside list-disc overflow-y-auto text-[0.65rem] text-amber-100/85">
+					{#each form.importResult.errors as err}
+						<li>{err}</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
 	<div class="flex flex-wrap items-center justify-between gap-4 border-b border-mms-gold/[0.06] px-6 py-5">
 		<h2 class="text-[0.75rem] font-medium tracking-wide text-mms-cream">Journal posts</h2>
-		<button
-			type="button"
-			class="rounded bg-mms-gold px-4 py-2 text-[0.6rem] font-medium tracking-[0.12em] text-mms-ink uppercase hover:bg-mms-gold-light"
-			disabled
-		>
-			+ New post
-		</button>
+		<div class="flex flex-wrap items-center gap-2">
+			<details class="group relative">
+				<summary
+					class="cursor-pointer list-none rounded border border-mms-gold/25 px-4 py-2 text-[0.6rem] tracking-[0.15em] text-mms-muted uppercase transition marker:content-none hover:border-mms-gold hover:text-mms-gold [&::-webkit-details-marker]:hidden"
+				>
+					Export / import
+				</summary>
+				<div
+					class="absolute right-0 z-20 mt-2 w-[min(calc(100vw-3rem),24rem)] rounded border border-mms-gold/15 bg-mms-ink3 p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+				>
+					<p class="mb-3 text-[0.65rem] leading-relaxed text-mms-muted">
+						<strong class="text-mms-cream">Export</strong> full post metadata. <strong class="text-mms-cream">Import</strong>
+						merges by <code class="text-mms-gold/90">legacyArticleId</code>. CSV column
+						<code class="text-mms-gold/90">tagsJson</code> is a JSON array or comma-separated list.
+					</p>
+					<div class="mb-4 grid grid-cols-3 gap-2">
+						<a
+							href={journalExportJsonHref}
+							class="rounded border border-mms-gold/35 py-2 text-center text-[0.55rem] uppercase tracking-[0.16em] text-mms-gold no-underline transition hover:bg-mms-gold/10"
+						>
+							JSON
+						</a>
+						<a
+							href={journalExportCsvHref}
+							class="rounded border border-mms-gold/35 py-2 text-center text-[0.55rem] uppercase tracking-[0.16em] text-mms-gold no-underline transition hover:bg-mms-gold/10"
+						>
+							CSV
+						</a>
+						<a
+							href={journalExportXlsxHref}
+							class="rounded border border-mms-gold/35 py-2 text-center text-[0.55rem] uppercase tracking-[0.16em] text-mms-gold no-underline transition hover:bg-mms-gold/10"
+						>
+							Excel
+						</a>
+					</div>
+					<form method="POST" action="?/importJournal" enctype="multipart/form-data" use:enhance>
+						<span class="mb-2 block text-[0.55rem] uppercase tracking-[0.18em] text-mms-muted">Import merge</span>
+						<input
+							name="file"
+							type="file"
+							accept="application/json,.json,text/csv,.csv,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
+							required
+							class="mb-3 w-full max-w-full text-[0.65rem] text-mms-muted file:mr-2 file:rounded file:border file:border-mms-gold/30 file:bg-mms-ink2 file:px-2 file:py-1 file:text-[0.58rem] file:text-mms-gold"
+						/>
+						<button
+							type="submit"
+							class="w-full rounded bg-mms-gold/15 py-2.5 text-[0.58rem] uppercase tracking-[0.18em] text-mms-gold transition hover:bg-mms-gold/25"
+						>
+							Run import
+						</button>
+					</form>
+				</div>
+			</details>
+			<button
+				type="button"
+				class="rounded bg-mms-gold px-4 py-2 text-[0.6rem] font-medium tracking-[0.12em] text-mms-ink uppercase hover:bg-mms-gold-light"
+				disabled
+			>
+				+ New post
+			</button>
+		</div>
 	</div>
 	{#if data.journalPosts.length > 0}
 		<SuperstoreFilterBar>

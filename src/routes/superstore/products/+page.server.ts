@@ -7,6 +7,7 @@ import {
 import { runCatalogImport } from '$lib/server/catalog/run-catalog-import';
 import { deleteCatalogProduct, listAllCatalogProducts } from '$lib/server/catalog/repo';
 import { assertSuperstore } from '$lib/server/superstore/access';
+import { formatZodIssues } from '$lib/server/format-zod-issues';
 import {
 	catalogExportProductSchema,
 	type CatalogExportProductRow,
@@ -72,9 +73,7 @@ export const actions: Actions = {
 					if (p.success) {
 						products.push(p.data);
 					} else {
-						errors.push(
-							`#${row}: ${p.error.issues.map((i) => `${i.path.join('.') || 'row'} ${i.message}`).join('; ')}`
-						);
+						errors.push(`#${row}: ${formatZodIssues(p.error)}`);
 					}
 				}
 			} else {

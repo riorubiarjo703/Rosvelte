@@ -231,6 +231,17 @@ export async function deleteCatalogProduct(id: number): Promise<void> {
 	await db.delete(catalogProduct).where(eq(catalogProduct.id, id));
 }
 
+/** Updates only `stock_qty` when the SKU exists (inventory import). */
+export async function updateCatalogProductStockBySku(sku: string, stockQty: number): Promise<boolean> {
+	const existing = await getCatalogProductBySku(sku.trim());
+	if (!existing) return false;
+	await db
+		.update(catalogProduct)
+		.set({ stockQty, updatedAt: new Date() })
+		.where(eq(catalogProduct.id, existing.id));
+	return true;
+}
+
 export async function restockCatalogProductsByThreshold(
 	threshold: number,
 	targetStock: number

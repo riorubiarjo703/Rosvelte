@@ -1,5 +1,48 @@
 import type { MmsProductDetailPayload } from '$lib/data/mms-product-detail';
+import { sql } from 'drizzle-orm';
 import { pgTable, serial, integer, text, timestamp, boolean, jsonb, unique } from 'drizzle-orm/pg-core';
+
+/** One line item persisted on paid/pending checkout orders (`storefront_order.lines_payload`). */
+export type StorefrontOrderLinePayload = {
+	productId: number;
+	sku: string;
+	name: string;
+	qty: number;
+	unitPriceIdr: number;
+	lineTotalIdr: number;
+	country: string;
+	region: string;
+};
+
+/** Storefront orders (admin list, export/import, Xendit checkout). */
+export const storefrontOrder = pgTable('storefront_order', {
+	id: serial('id').primaryKey(),
+	orderCode: text('order_code').notNull().unique(),
+	customerName: text('customer_name').notNull(),
+	customerEmail: text('customer_email').notNull(),
+	phone: text('phone'),
+	productSummary: text('product_summary').notNull(),
+	totalIdr: integer('total_idr').notNull(),
+	subtotalIdr: integer('subtotal_idr').notNull().default(0),
+	promoDiscountIdr: integer('promo_discount_idr').notNull().default(0),
+	shippingIdr: integer('shipping_idr').notNull().default(0),
+	taxIdr: integer('tax_idr').notNull().default(0),
+	shippingLabel: text('shipping_label').notNull().default(''),
+	addressLabel: text('address_label').notNull().default(''),
+	linesPayload: jsonb('lines_payload')
+		.$type<StorefrontOrderLinePayload[]>()
+		.notNull()
+		.default(sql`'[]'::jsonb`),
+	xenditExternalId: text('xendit_external_id').unique(),
+	xenditInvoiceId: text('xendit_invoice_id'),
+	checkoutInvoiceUrl: text('checkout_invoice_url'),
+	paymentStatus: text('payment_status').notNull().default('none'),
+	currency: text('currency').notNull().default('IDR'),
+	status: text('status').notNull().default('pending'),
+	orderedAt: timestamp('ordered_at', { withTimezone: true }).notNull().defaultNow(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
 
 export const task = pgTable('task', {
 	id: serial('id').primaryKey(),

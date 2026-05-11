@@ -200,3 +200,89 @@ export const journalPostUpdateSchema = z.object({
 	viewsCount: z.preprocess((v) => Number(v), z.number().int().min(0).max(99_999_999)),
 	status: journalStatusSchema
 });
+
+export const superstoreOrderStatusSchema = z.enum(['pending', 'active', 'out']);
+
+/** One row in `storefront-order-export-v1.json`. Merge key: orderCode (e.g. ORD-2842). */
+export const orderExportRowSchema = z.object({
+	orderCode: z.string().trim().min(1).max(80),
+	customerName: z.string().trim().min(1).max(300),
+	customerEmail: z.string().trim().min(1).max(320),
+	productSummary: z.string().trim().min(1).max(2000),
+	totalIdr: coalesceInt(0, 2_000_000_000, 0),
+	currency: z.preprocess(
+		(v) => (v == null || String(v).trim() === '' ? 'IDR' : String(v).trim().toUpperCase().slice(0, 8)),
+		z.string().max(8)
+	),
+	status: superstoreOrderStatusSchema,
+	orderedAt: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(48))
+});
+
+export const orderImportFileSchema = z.object({
+	version: z.literal(1),
+	exportedAt: z.string().optional(),
+	orders: z.array(orderExportRowSchema)
+});
+
+export type OrderExportRow = z.infer<typeof orderExportRowSchema>;
+
+export const inventoryExportRowSchema = z.object({
+	sku: z.string().trim().min(1).max(120),
+	stockQty: coalesceInt(0, 1_000_000, 0)
+});
+
+export const inventoryImportFileSchema = z.object({
+	version: z.literal(1),
+	exportedAt: z.string().optional(),
+	rows: z.array(inventoryExportRowSchema)
+});
+
+export type InventoryExportRow = z.infer<typeof inventoryExportRowSchema>;
+
+export const journalExportPostSchema = z.object({
+	legacyArticleId: z.preprocess((v) => Number(v), z.number().int().positive()),
+	slug: z.string().trim().min(1).max(400),
+	title: z.string().trim().min(1).max(500),
+	cat: journalArticleCatSchema,
+	catLabel: z.string().trim().min(1).max(120),
+	author: z.string().trim().min(1).max(200),
+	excerpt: z.string().trim().min(1).max(12000),
+	adminDateDisplay: z.string().trim().min(1).max(120),
+	readTime: z.string().trim().min(1).max(48),
+	tags: z.array(z.string()),
+	featured: z.boolean(),
+	wide: z.boolean(),
+	viewsCount: coalesceInt(0, 99_999_999, 0),
+	status: journalStatusSchema,
+	publishedAtIso: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(48))
+});
+
+export const journalImportFileSchema = z.object({
+	version: z.literal(1),
+	exportedAt: z.string().optional(),
+	posts: z.array(journalExportPostSchema)
+});
+
+export type JournalExportPostRow = z.infer<typeof journalExportPostSchema>;
+
+export const customerExportRowSchema = z.object({
+	id: z.string().trim().min(1).max(120).optional(),
+	name: z.string().trim().min(1).max(300),
+	email: z.string().trim().email().max(320),
+	emailVerified: z.boolean(),
+	phone: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(60)),
+	birthDate: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(20)),
+	preferredLanguage: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(60)),
+	spiritPreference: z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().max(120)),
+	image: z.preprocess((v) => (v == null || v === '' ? null : String(v).trim()), z.string().max(2000).nullable()),
+	createdAt: z.preprocess((v) => (v == null ? undefined : String(v).trim()), z.string().max(48).optional()),
+	updatedAt: z.preprocess((v) => (v == null ? undefined : String(v).trim()), z.string().max(48).optional())
+});
+
+export const customerImportFileSchema = z.object({
+	version: z.literal(1),
+	exportedAt: z.string().optional(),
+	customers: z.array(customerExportRowSchema)
+});
+
+export type CustomerExportRow = z.infer<typeof customerExportRowSchema>;
