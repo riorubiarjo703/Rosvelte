@@ -9,6 +9,7 @@
 * Site header account entry: hover/focus desktop menu (guest: Sign in / Sign up; signed-in: My Account, My Orders, My Wishlist, Sign out) plus matching links in the mobile drawer
 * **Header product search:** two-column autocomplete (suggestions + product previews with hero image and IDR price) on desktop and mobile; matches name, country, region, category, and description; “See all” preserves collections filters when applicable
 * Staff Superstore with auth-gated CRUD, uploads, journal management, exports, and admin utilities
+* **Superstore list filters:** client-side filter bars on Products, Customers, Inventory, Journal posts, and Orders (search, category/status/date dropdowns where applicable, counts); DB-backed lists use full server `load` payloads; Orders still uses static `demoOrders` until an API/loader exists
 
 ## 2. Technical Structure
 ### Dependencies
@@ -49,6 +50,12 @@
 - `src/routes/+layout.server.ts`: shared storefront/customer layout data; loads `catalogHeroImages`, `catalogStockQtys`, and **`catalogSearchItems`** (published DB rows or seed fallback, same source rule as `/collections`)
 - `src/app.d.ts`: extends `App.PageData` with optional `catalogSearchItems` for header autocomplete
 - `src/lib/server/db/schema.ts`: app data model (catalog, journal, uploads, tasks, customer-related tables)
+- `src/lib/components/superstore/SuperstoreFilterBar.svelte`: shared admin filter row wrapper (layout/styling) for Superstore tables
+- `src/routes/superstore/products/+page.svelte`: product catalogue table; filters — search (name/SKU), category, stock band (in / low / out), published vs draft; filtered stock-bar scale
+- `src/routes/superstore/customers/+page.svelte`: customer list; filters — search (name/email), status (active/pending), location
+- `src/routes/superstore/inventory/+page.svelte`: stock levels table; filters — search (name/SKU), category, stock status (KPI strip stays global)
+- `src/routes/superstore/journal/+page.svelte`: journal posts table; filters — search (title/author/category text), category, status (active/pending/out)
+- `src/routes/superstore/orders/+page.svelte`: demo orders table (`demoOrders` from `mms-admin-demo-data.ts`); filters — search (order id, customer, product, total, date text), order status (pending/active/out), date bucket; KPI strip stays static `DEMO_KPIS`
 
 ### Core Methods
 ```ts
@@ -155,6 +162,7 @@ catalogSearchItems: MmsCatalogSearchItem[]
   - Journal edit flows
   - Task management
   - Product export (`json`, `csv`, `xlsx`)
+- **Table filters (client-side):** DB-backed list pages keep existing `+page.server.ts` loads; filtering is `$state` + `$derived` in the route components. Empty filter results show an in-table or inline message. Filter options such as category lists are derived from the loaded rows (no extra API). Inventory summary tiles (total SKUs, out of stock, low stock) intentionally reflect the full catalogue, not the filtered subset. **Orders** (`/superstore/orders`) filters the in-memory `demoOrders` array; top KPIs remain the static `DEMO_KPIS` demo values until real order data is wired.
 
 ### Events/Plugins
 - SvelteKit integrations used as extension points:
@@ -167,6 +175,7 @@ catalogSearchItems: MmsCatalogSearchItem[]
 - Public storefront prioritizes DB-backed content with static fallback datasets where applicable.
 - Header search suggestions use the same published-catalog vs seed fallback as `/collections` (`+layout.server.ts`); only published products appear when the database has rows.
 - Staff superstore access is restricted by configured email allowlist unless explicit override is enabled.
+- Superstore table filters are client-side only: they narrow rows already returned by each route’s `load` (or, for Orders, rows from static demo data); they do not alter server queries or staff ACL.
 - Upload metadata persists in DB while physical files are stored on disk path configured by environment.
 - About page is treated as a dedicated brand route (`/about`) and no longer relies on home-page section anchors for footer navigation.
 - Custom cursor UX is global (not page-scoped), with pointer-aware fallback for mobile/touch.

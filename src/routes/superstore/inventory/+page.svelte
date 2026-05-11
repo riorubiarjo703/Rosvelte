@@ -3,13 +3,48 @@
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
 	import SuperstoreMiniBottle from '$lib/components/superstore/SuperstoreMiniBottle.svelte';
+	import SuperstoreFilterBar from '$lib/components/superstore/SuperstoreFilterBar.svelte';
 
 	let { data, form } = $props();
+
+	let filterQuery = $state('');
+	let filterCategory = $state('');
+	let filterStock = $state<'all' | 'active' | 'low' | 'out'>('all');
+
+	function stockStatus(stock: number): string {
+		if (stock === 0) return 'out';
+		if (stock <= 5) return 'low';
+		return 'active';
+	}
+
+	const categories = $derived(
+		[...new Set(data.products.map((p) => p.cat))].sort((a, b) => String(a).localeCompare(String(b)))
+	);
+
+	const filteredProducts = $derived(
+		data.products.filter((p) => {
+			const q = filterQuery.trim().toLowerCase();
+			if (q) {
+				const hay = `${p.name} ${p.sku}`.toLowerCase();
+				if (!hay.includes(q)) return false;
+			}
+			if (filterCategory && p.cat !== filterCategory) return false;
+			if (filterStock !== 'all' && stockStatus(p.stockQty) !== filterStock) return false;
+			return true;
+		})
+	);
 
 	const skuCount = $derived(data.products.length);
 	const outOfStock = $derived(data.products.filter((p) => p.stockQty === 0).length);
 	const lowStock = $derived(data.products.filter((p) => p.stockQty > 0 && p.stockQty <= 5).length);
-	const maxStock = $derived(Math.max(12, ...data.products.map((p) => p.stockQty)));
+	const maxStock = $derived(
+		filteredProducts.length === 0 ? 12 : Math.max(12, ...filteredProducts.map((p) => p.stockQty))
+	);
+
+	const selectClass =
+		'min-w-[8.5rem] rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream focus:border-mms-gold focus:outline-none';
+	const inputClass =
+		'min-w-[12rem] flex-1 rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream placeholder:text-mms-muted/70 focus:border-mms-gold focus:outline-none';
 
 	function pct(stock: number) {
 		if (maxStock <= 0) return 0;
@@ -21,12 +56,6 @@
 		if (stock === 0) return '#E05252';
 		if (stock <= 5) return '#E8B434';
 		return '#4CAF82';
-	}
-
-	function stockStatus(stock: number): string {
-		if (stock === 0) return 'out';
-		if (stock <= 5) return 'low';
-		return 'active';
 	}
 
 	function uploadHref(uploadId: number): string {
@@ -83,6 +112,41 @@
 	{#if form?.message}
 		<p class="border-b border-mms-gold/[0.06] px-6 py-3 text-[0.72rem] text-mms-gold">{form.message}</p>
 	{/if}
+	{#if data.products.length > 0}
+		<SuperstoreFilterBar>
+			<label class="flex min-w-[10rem] flex-1 flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Search</span>
+				<input
+					type="search"
+					bind:value={filterQuery}
+					placeholder="Name or SKU…"
+					class={inputClass}
+					autocomplete="off"
+				/>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Category</span>
+				<select bind:value={filterCategory} class={selectClass}>
+					<option value="">All</option>
+					{#each categories as cat}
+						<option value={cat}>{cat}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Status</span>
+				<select bind:value={filterStock} class={selectClass}>
+					<option value="all">All</option>
+					<option value="active">In stock</option>
+					<option value="low">Low stock</option>
+					<option value="out">Out of stock</option>
+				</select>
+			</label>
+			<p class="ml-auto self-center text-[0.65rem] text-mms-muted">
+				{filteredProducts.length} of {data.products.length}
+			</p>
+		</SuperstoreFilterBar>
+	{/if}
 	<div class="overflow-x-auto">
 		<table class="w-full min-w-[52rem] border-collapse text-left text-[0.75rem]">
 			<thead>
@@ -97,7 +161,12 @@
 				</tr>
 			</thead>
 			<tbody class="text-mms-cream">
-				{#each data.products as p (p.id)}
+				{#if data.products.length > 0 && filteredProducts.length === 0}
+					<tr>
+						<td colspan="7" class="px-6 py-8 text-center text-mms-muted">No rows match the current filters.</td>
+					</tr>
+				{:else}
+					{#each filteredProducts as p (p.id)}
 					<tr class="border-b border-mms-gold/[0.04] transition-colors hover:bg-mms-gold/[0.06]">
 						<td class="px-6 py-3">
 							<div class="flex items-center gap-2">
@@ -155,7 +224,8 @@
 							</div>
 						</td>
 					</tr>
-				{/each}
+					{/each}
+				{/if}
 			</tbody>
 		</table>
 	</div>

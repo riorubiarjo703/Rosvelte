@@ -3,8 +3,37 @@
 	import type { Pathname } from '$app/types';
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
+	import SuperstoreFilterBar from '$lib/components/superstore/SuperstoreFilterBar.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	let filterQuery = $state('');
+	let filterStatus = $state<'all' | 'active' | 'pending'>('all');
+	let filterLocation = $state('');
+
+	const locations = $derived(
+		[...new Set(data.customers.map((c) => c.location).filter((loc) => loc && loc !== '-'))].sort((a, b) =>
+			a.localeCompare(b)
+		)
+	);
+
+	const filteredCustomers = $derived(
+		data.customers.filter((c) => {
+			const q = filterQuery.trim().toLowerCase();
+			if (q) {
+				const hay = `${c.name} ${c.email}`.toLowerCase();
+				if (!hay.includes(q)) return false;
+			}
+			if (filterStatus !== 'all' && c.status !== filterStatus) return false;
+			if (filterLocation && c.location !== filterLocation) return false;
+			return true;
+		})
+	);
+
+	const selectClass =
+		'min-w-[8.5rem] rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream focus:border-mms-gold focus:outline-none';
+	const inputClass =
+		'min-w-[12rem] flex-1 rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream placeholder:text-mms-muted/70 focus:border-mms-gold focus:outline-none';
 
 	function editHref(id: string) {
 		return resolvedLocalizedHref(`/superstore/customers/${id}/edit` as Pathname);
@@ -45,6 +74,40 @@
 			Export
 		</button>
 	</div>
+	{#if data.customers.length > 0}
+		<SuperstoreFilterBar>
+			<label class="flex min-w-[10rem] flex-1 flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Search</span>
+				<input
+					type="search"
+					bind:value={filterQuery}
+					placeholder="Name or email…"
+					class={inputClass}
+					autocomplete="off"
+				/>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Status</span>
+				<select bind:value={filterStatus} class={selectClass}>
+					<option value="all">All</option>
+					<option value="active">Active</option>
+					<option value="pending">Pending</option>
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Location</span>
+				<select bind:value={filterLocation} class={selectClass}>
+					<option value="">All</option>
+					{#each locations as loc}
+						<option value={loc}>{loc}</option>
+					{/each}
+				</select>
+			</label>
+			<p class="ml-auto self-center text-[0.65rem] text-mms-muted">
+				{filteredCustomers.length} of {data.customers.length}
+			</p>
+		</SuperstoreFilterBar>
+	{/if}
 	<div class="overflow-x-auto">
 		<table class="w-full min-w-[52rem] border-collapse text-left text-[0.75rem]">
 			<thead>
@@ -64,8 +127,12 @@
 					<tr>
 						<td colspan="8" class="px-6 py-8 text-center text-mms-muted">No customer records yet.</td>
 					</tr>
+				{:else if filteredCustomers.length === 0}
+					<tr>
+						<td colspan="8" class="px-6 py-8 text-center text-mms-muted">No customers match the current filters.</td>
+					</tr>
 				{:else}
-					{#each data.customers as c (c.id)}
+					{#each filteredCustomers as c (c.id)}
 						<tr class="border-b border-mms-gold/[0.04] transition-colors hover:bg-mms-gold/[0.06]">
 							<td class="px-6 py-3 font-medium">{c.name}</td>
 							<td class="px-6 py-3 text-mms-muted">{c.email}</td>

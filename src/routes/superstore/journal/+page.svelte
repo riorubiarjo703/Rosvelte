@@ -4,8 +4,35 @@
 	import { enhance } from '$app/forms';
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
+	import SuperstoreFilterBar from '$lib/components/superstore/SuperstoreFilterBar.svelte';
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
+
+	let filterQuery = $state('');
+	let filterCategory = $state('');
+	let filterStatus = $state<'all' | 'active' | 'pending' | 'out'>('all');
+
+	const categories = $derived(
+		[...new Set(data.journalPosts.map((j) => j.category))].sort((a, b) => a.localeCompare(b))
+	);
+
+	const filteredJournalPosts = $derived(
+		data.journalPosts.filter((j) => {
+			const q = filterQuery.trim().toLowerCase();
+			if (q) {
+				const hay = `${j.title} ${j.author} ${j.category}`.toLowerCase();
+				if (!hay.includes(q)) return false;
+			}
+			if (filterCategory && j.category !== filterCategory) return false;
+			if (filterStatus !== 'all' && j.status !== filterStatus) return false;
+			return true;
+		})
+	);
+
+	const selectClass =
+		'min-w-[8.5rem] rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream focus:border-mms-gold focus:outline-none';
+	const inputClass =
+		'min-w-[12rem] flex-1 rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream placeholder:text-mms-muted/70 focus:border-mms-gold focus:outline-none';
 
 	function editJournalHref(id: number) {
 		return resolvedLocalizedHref(`/superstore/journal/${id}/edit` as Pathname);
@@ -30,6 +57,41 @@
 			+ New post
 		</button>
 	</div>
+	{#if data.journalPosts.length > 0}
+		<SuperstoreFilterBar>
+			<label class="flex min-w-[10rem] flex-1 flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Search</span>
+				<input
+					type="search"
+					bind:value={filterQuery}
+					placeholder="Title, author, category…"
+					class={inputClass}
+					autocomplete="off"
+				/>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Category</span>
+				<select bind:value={filterCategory} class={selectClass}>
+					<option value="">All</option>
+					{#each categories as cat}
+						<option value={cat}>{cat}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Status</span>
+				<select bind:value={filterStatus} class={selectClass}>
+					<option value="all">All</option>
+					<option value="active">Active</option>
+					<option value="pending">Pending</option>
+					<option value="out">Out / hidden</option>
+				</select>
+			</label>
+			<p class="ml-auto self-center text-[0.65rem] text-mms-muted">
+				{filteredJournalPosts.length} of {data.journalPosts.length}
+			</p>
+		</SuperstoreFilterBar>
+	{/if}
 	<div class="overflow-x-auto">
 		<table class="w-full min-w-[48rem] border-collapse text-left text-[0.75rem]">
 			<thead>
@@ -44,7 +106,12 @@
 				</tr>
 			</thead>
 			<tbody class="text-mms-cream">
-				{#each data.journalPosts as j (j.id)}
+				{#if data.journalPosts.length > 0 && filteredJournalPosts.length === 0}
+					<tr>
+						<td colspan="7" class="px-6 py-8 text-center text-mms-muted">No posts match the current filters.</td>
+					</tr>
+				{:else}
+					{#each filteredJournalPosts as j (j.id)}
 					<tr class="border-b border-mms-gold/[0.04] transition-colors hover:bg-mms-gold/[0.06]">
 						<td class="max-w-[14rem] px-6 py-3 font-medium">{j.title}</td>
 						<td class="px-6 py-3 text-[0.7rem] text-mms-muted">{j.category}</td>
@@ -87,7 +154,8 @@
 							</div>
 						</td>
 					</tr>
-				{/each}
+					{/each}
+				{/if}
 			</tbody>
 		</table>
 	</div>

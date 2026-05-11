@@ -5,8 +5,44 @@
 	import { formatIdr } from '$lib/cart/mms-cart';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
 	import SuperstoreMiniBottle from '$lib/components/superstore/SuperstoreMiniBottle.svelte';
+	import SuperstoreFilterBar from '$lib/components/superstore/SuperstoreFilterBar.svelte';
 
 	let { data, form } = $props();
+
+	let filterQuery = $state('');
+	let filterCategory = $state('');
+	let filterStock = $state<'all' | 'active' | 'low' | 'out'>('all');
+	let filterPublished = $state<'all' | 'published' | 'draft'>('all');
+
+	function stockStatus(stock: number): string {
+		if (stock === 0) return 'out';
+		if (stock <= 5) return 'low';
+		return 'active';
+	}
+
+	const categories = $derived(
+		[...new Set(data.products.map((p) => p.cat))].sort((a, b) => String(a).localeCompare(String(b)))
+	);
+
+	const filteredProducts = $derived(
+		data.products.filter((p) => {
+			const q = filterQuery.trim().toLowerCase();
+			if (q) {
+				const hay = `${p.name} ${p.sku}`.toLowerCase();
+				if (!hay.includes(q)) return false;
+			}
+			if (filterCategory && p.cat !== filterCategory) return false;
+			if (filterStock !== 'all' && stockStatus(p.stockQty) !== filterStock) return false;
+			if (filterPublished === 'published' && !p.published) return false;
+			if (filterPublished === 'draft' && p.published) return false;
+			return true;
+		})
+	);
+
+	const selectClass =
+		'min-w-[8.5rem] rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream focus:border-mms-gold focus:outline-none';
+	const inputClass =
+		'min-w-[12rem] flex-1 rounded border border-mms-gold/25 bg-mms-ink2 px-2.5 py-1.5 text-[0.68rem] text-mms-cream placeholder:text-mms-muted/70 focus:border-mms-gold focus:outline-none';
 
 	function hrefFor(path: Pathname) {
 		return resolvedLocalizedHref(path);
@@ -33,13 +69,9 @@
 		return '#4CAF82';
 	}
 
-	function stockStatus(stock: number): string {
-		if (stock === 0) return 'out';
-		if (stock <= 5) return 'low';
-		return 'active';
-	}
-
-	const maxStock = $derived(Math.max(12, ...data.products.map((p) => p.stockQty)));
+	const maxStock = $derived(
+		filteredProducts.length === 0 ? 12 : Math.max(12, ...filteredProducts.map((p) => p.stockQty))
+	);
 </script>
 
 <svelte:head>
@@ -135,6 +167,50 @@
 			No products in the database yet. Seed demo data with <code class="text-mms-gold">npm run db:seed:catalog</code> or add a product.
 		</p>
 	{:else}
+		<SuperstoreFilterBar>
+			<label class="flex min-w-[10rem] flex-1 flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Search</span>
+				<input
+					type="search"
+					bind:value={filterQuery}
+					placeholder="Name or SKU…"
+					class={inputClass}
+					autocomplete="off"
+				/>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Category</span>
+				<select bind:value={filterCategory} class={selectClass}>
+					<option value="">All</option>
+					{#each categories as cat}
+						<option value={cat}>{cat}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Stock</span>
+				<select bind:value={filterStock} class={selectClass}>
+					<option value="all">All</option>
+					<option value="active">In stock</option>
+					<option value="low">Low stock</option>
+					<option value="out">Out of stock</option>
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="text-[0.55rem] tracking-[0.14em] text-mms-muted uppercase">Visibility</span>
+				<select bind:value={filterPublished} class={selectClass}>
+					<option value="all">All</option>
+					<option value="published">Published</option>
+					<option value="draft">Draft</option>
+				</select>
+			</label>
+			<p class="ml-auto self-center text-[0.65rem] text-mms-muted">
+				{filteredProducts.length} of {data.products.length}
+			</p>
+		</SuperstoreFilterBar>
+		{#if filteredProducts.length === 0}
+			<p class="px-6 py-8 text-[0.75rem] text-mms-muted">No products match the current filters.</p>
+		{:else}
 		<div class="overflow-x-auto">
 			<table class="w-full min-w-[56rem] border-collapse text-left text-[0.75rem]">
 				<thead>
@@ -151,7 +227,7 @@
 					</tr>
 				</thead>
 				<tbody class="text-mms-cream">
-					{#each data.products as p (p.id)}
+					{#each filteredProducts as p (p.id)}
 						<tr class="border-b border-mms-gold/[0.04] transition-colors hover:bg-mms-gold/[0.06]">
 							<td class="px-6 py-3">
 								<div class="flex items-center gap-3">
@@ -224,5 +300,6 @@
 				</tbody>
 			</table>
 		</div>
+		{/if}
 	{/if}
 </div>
