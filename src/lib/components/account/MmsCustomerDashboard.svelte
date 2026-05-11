@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import type { Pathname } from '$app/types';
 	import { resolve } from '$app/paths';
 	import type { User } from 'better-auth/types';
@@ -44,6 +45,14 @@
 
 	let activePanel = $state<Panel>('overview');
 	let mobileNavOpen = $state(false);
+
+	/** Deep-link from header / bookmarks: `/account?section=orders` etc. */
+	$effect(() => {
+		const section = page.url.searchParams.get('section');
+		if (section === 'orders') activePanel = 'orders';
+		else if (section === 'wishlist') activePanel = 'wishlist';
+		else if (section === 'overview') activePanel = 'overview';
+	});
 
 	const firstName = $derived(customer.name.trim().split(/\s+/)[0] || customer.name);
 	const initials = $derived.by(() => {

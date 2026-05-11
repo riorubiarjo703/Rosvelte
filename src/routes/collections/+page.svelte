@@ -12,6 +12,7 @@
 	import type { MmsCollectionCategory, MmsCollectionProduct } from '$lib/data/mms-collection-products';
 	import {
 		mmsBuildCollectionsUrl,
+		mmsNavCollectionCountries,
 		mmsParseCollectionCategory,
 		mmsParseCollectionCountry,
 		mmsParseCollectionRegion
@@ -58,12 +59,64 @@
 			{ replaceState: true, noScroll: true, keepFocus: true }
 		);
 	}
+	const PRICE_FILTER_MIN = 500_000;
+	const PRICE_SLIDER_MAX = 20_000_000;
+
+	const AGE_BUCKETS: { id: string; label: string }[] = [
+		{ id: 'nas', label: 'No age statement' },
+		{ id: 'y10_14', label: '10–14 years' },
+		{ id: 'y15_20', label: '15–20 years' },
+		{ id: 'y21_30', label: '21–30 years' },
+		{ id: 'y30plus', label: '30+ years' }
+	];
+
+	function productAgeBucketIds(p: MmsCollectionProduct): string[] {
+		const a = p.age;
+		const ids = new Set<string>();
+		if (a === 'NAS') ids.add('nas');
+		if (a === 'XO+') ids.add('y30plus');
+		if (a === 'XO') ids.add('y15_20');
+		const n = parseInt(a, 10);
+		if (!Number.isNaN(n)) {
+			if (n >= 10 && n <= 14) ids.add('y10_14');
+			if (n >= 15 && n <= 20) ids.add('y15_20');
+			if (n >= 21 && n <= 30) ids.add('y21_30');
+			if (n >= 31) ids.add('y30plus');
+		}
+		return [...ids];
+	}
+
+	function isLimitedEditionBadge(b: MmsCollectionProduct['badge']): boolean {
+		return b === 'limited' || b === 'rare' || b === 'exclusive';
+	}
+
 	let sortKey = $state<
 		'featured' | 'price-asc' | 'price-desc' | 'age-desc' | 'rating'
 	>('featured');
 	let isListView = $state(false);
-	let priceSlider = $state(10_000_000);
+	let priceSlider = $state(PRICE_SLIDER_MAX);
+	const priceTrackFillPct = $derived(
+		((priceSlider - PRICE_FILTER_MIN) / (PRICE_SLIDER_MAX - PRICE_FILTER_MIN)) * 100
+	);
 	let activePage = $state(1);
+
+	const navCountries = mmsNavCollectionCountries();
+	let selectedCountries = $state<Set<string>>(new Set(navCountries));
+	let selectedAgeBuckets = $state<Set<string>>(new Set(AGE_BUCKETS.map((b) => b.id)));
+	let availabilityMode = $state<'all' | 'in_stock' | 'limited'>('all');
+
+	let lastSyncedUrlCountry = $state<string | null | undefined>(undefined);
+
+	$effect(() => {
+		const ac = activeCountry;
+		if (ac === lastSyncedUrlCountry) return;
+		lastSyncedUrlCountry = ac;
+		if (ac && navCountries.includes(ac)) {
+			selectedCountries = new Set([ac]);
+		} else {
+			selectedCountries = new Set(navCountries);
+		}
+	});
 
 	let io: IntersectionObserver | undefined;
 
@@ -75,19 +128,50 @@
 		return Number.isNaN(n) ? 0 : n;
 	}
 
-	const filtered = $derived.by(() => {
+	/** Products matching category, region, and search — used for country facet counts. */
+	const productsForCountryCounts = $derived.by(() => {
 		let list =
 			currentCat === 'all'
 				? [...catalogProducts]
 				: catalogProducts.filter((p) => p.cat === currentCat);
 
-		if (activeCountry) list = list.filter((p) => p.country === activeCountry);
 		if (activeRegion) list = list.filter((p) => p.region === activeRegion);
 		if (searchNeedle) {
 			list = list.filter((p) => {
 				const haystack = `${p.name} ${p.country} ${p.region} ${p.desc}`.toLocaleLowerCase();
 				return haystack.includes(searchNeedle);
 			});
+		}
+		return list;
+	});
+
+	const countryCounts = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const p of productsForCountryCounts) {
+			m.set(p.country, (m.get(p.country) ?? 0) + 1);
+		}
+		return m;
+	});
+
+	const filtered = $derived.by(() => {
+		let list = [...productsForCountryCounts];
+
+		const allCountriesSelected = navCountries.every((c) => selectedCountries.has(c));
+		if (!allCountriesSelected) {
+			list = list.filter((p) => selectedCountries.has(p.country));
+		}
+
+		list = list.filter((p) => p.price >= PRICE_FILTER_MIN && p.price <= priceSlider);
+
+		const allAgeSelected = AGE_BUCKETS.every((b) => selectedAgeBuckets.has(b.id));
+		if (!allAgeSelected) {
+			list = list.filter((p) => productAgeBucketIds(p).some((id) => selectedAgeBuckets.has(id)));
+		}
+
+		if (availabilityMode === 'in_stock') {
+			list = list.filter((p) => p.stockQty === undefined || p.stockQty > 0);
+		} else if (availabilityMode === 'limited') {
+			list = list.filter((p) => isLimitedEditionBadge(p.badge));
 		}
 
 		if (sortKey === 'price-asc') list.sort((a, b) => a.price - b.price);
@@ -97,6 +181,27 @@
 
 		return list;
 	});
+
+	function toggleCountry(country: string) {
+		const next = new Set(selectedCountries);
+		if (next.has(country)) next.delete(country);
+		else next.add(country);
+		selectedCountries = next;
+	}
+
+	function toggleAgeBucket(id: string) {
+		const next = new Set(selectedAgeBuckets);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		selectedAgeBuckets = next;
+	}
+
+	function resetSidebarFilters() {
+		selectedCountries = new Set(navCountries);
+		selectedAgeBuckets = new Set(AGE_BUCKETS.map((b) => b.id));
+		priceSlider = PRICE_SLIDER_MAX;
+		availabilityMode = 'all';
+	}
 
 	onMount(() => {
 		io = new IntersectionObserver(
@@ -113,7 +218,7 @@
 		const t = window.setTimeout(() => {
 			document
 				.querySelectorAll(
-					'.collections-page .page-hero .reveal, .collections-page aside.collections-sidebar.reveal, .collections-page .collections-pagination.reveal'
+					'.collections-page .page-hero .reveal, .collections-page .collections-sidebar-inner.reveal, .collections-page .collections-pagination.reveal'
 				)
 				.forEach((el) => el.classList.add('visible'));
 		}, 100);
@@ -160,7 +265,7 @@
 </svelte:head>
 
 <div
-	class="collections-page min-h-dvh overflow-x-hidden bg-mms-ink font-mms-sans text-mms-cream antialiased"
+	class="collections-page min-h-dvh overflow-x-clip bg-mms-ink font-mms-sans text-mms-cream antialiased"
 >
 	<MmsSiteHeader />
 
@@ -315,106 +420,139 @@
 			</div>
 
 			<aside
-				class="collections-sidebar reveal top-40 max-lg:grid max-lg:grid-cols-2 max-lg:gap-px max-sm:grid-cols-1 lg:sticky {mmsReveal}"
+				class="collections-sidebar lg:sticky lg:top-[10.25rem] lg:z-10 lg:max-h-[calc(100dvh-11rem)] lg:self-start lg:overflow-y-auto"
 			>
-				<div class="mb-px bg-mms-ink2 p-7">
-					<p class="mb-5 flex items-center gap-2">
-						<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
-							>Filter by country</span>
-						<span class="h-px flex-1 bg-mms-gold/12"></span>
-					</p>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> Scotland <span
-							class="ml-auto text-[0.7rem] text-mms-muted">14</span></label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> France <span
-							class="ml-auto text-[0.7rem] text-mms-muted">9</span></label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> Japan <span
-							class="ml-auto text-[0.7rem] text-mms-muted">8</span></label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> Mexico <span
-							class="ml-auto text-[0.7rem] text-mms-muted">7</span></label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> Ireland <span
-							class="ml-auto text-[0.7rem] text-mms-muted">5</span></label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> Caribbean <span
-							class="ml-auto text-[0.7rem] text-mms-muted">5</span></label
-					>
-				</div>
+				<div
+					class={`collections-sidebar-inner max-lg:grid max-lg:grid-cols-2 max-lg:gap-px max-sm:grid-cols-1 lg:flex lg:flex-col lg:gap-px ${mmsReveal}`}
+				>
+					<div class="mb-px bg-mms-ink2 p-7">
+						<p class="mb-5 flex items-center gap-2">
+							<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
+								>Filter by country</span>
+							<span class="h-px flex-1 bg-mms-gold/12"></span>
+						</p>
+						{#each navCountries as country (country)}
+							<label
+								class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
+							>
+								<input
+									type="checkbox"
+									class="accent-mms-gold"
+									checked={selectedCountries.has(country)}
+									onchange={() => toggleCountry(country)}
+								/>
+								{country}
+								<span class="ml-auto text-[0.7rem] text-mms-muted"
+									>{countryCounts.get(country) ?? 0}</span>
+							</label>
+						{/each}
+					</div>
 
-				<div class="mb-px bg-mms-ink2 p-7">
-					<p class="mb-5 flex items-center gap-2">
-						<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim">Price range</span>
-						<span class="h-px flex-1 bg-mms-gold/12"></span>
-					</p>
-					<div class="py-2">
-						<input
-							type="range"
-							min="500000"
-							max="20000000"
-							step="100000"
-							bind:value={priceSlider}
-							class="h-0.5 w-full cursor-pointer appearance-none accent-mms-gold [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-mms-gold [&::-webkit-slider-thumb]:appearance-none"
-						/>
-						<div class="mt-2.5 flex justify-between text-[0.68rem] text-mms-muted">
-							<span>Rp 500k</span>
-							<span>Rp {priceSlider.toLocaleString('id-ID')}</span>
+					<div class="mb-px bg-mms-ink2 p-7">
+						<p class="mb-5 flex items-center gap-2">
+							<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
+								>Price range</span>
+							<span class="h-px flex-1 bg-mms-gold/12"></span>
+						</p>
+						<div class="py-2">
+							<div class="relative flex h-9 items-center">
+								<div
+									class="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-mms-gold/18"
+									aria-hidden="true"
+								></div>
+								<div
+									class="pointer-events-none absolute left-0 top-1/2 h-1 max-w-full -translate-y-1/2 rounded-full bg-mms-gold/55"
+									style:width="{priceTrackFillPct}%"
+									aria-hidden="true"
+								></div>
+								<input
+									type="range"
+									min={PRICE_FILTER_MIN}
+									max={PRICE_SLIDER_MAX}
+									step="100000"
+									bind:value={priceSlider}
+									aria-valuemin={PRICE_FILTER_MIN}
+									aria-valuemax={PRICE_SLIDER_MAX}
+									aria-valuenow={priceSlider}
+									aria-label="Maximum price"
+									class="relative z-10 h-9 w-full cursor-pointer appearance-none bg-transparent accent-mms-gold [&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:cursor-pointer [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-1.5 [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-mms-gold [&::-webkit-slider-thumb]:bg-mms-gold [&::-webkit-slider-thumb]:shadow-[0_0_0_1px_rgba(0,0,0,0.35)] [&::-webkit-slider-thumb]:appearance-none [&::-moz-range-track]:h-1 [&::-moz-range-track]:cursor-pointer [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-mms-gold [&::-moz-range-thumb]:bg-mms-gold"
+								/>
+							</div>
+							<div class="mt-2.5 flex justify-between text-[0.68rem] text-mms-muted">
+								<span>Rp {(PRICE_FILTER_MIN / 1000).toLocaleString('id-ID')}k</span>
+								<span>Rp {priceSlider.toLocaleString('id-ID')}</span>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="mb-px bg-mms-ink2 p-7">
-					<p class="mb-5 flex items-center gap-2">
-						<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
-							>Age statement</span>
-						<span class="h-px flex-1 bg-mms-gold/12"></span>
-					</p>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> No age statement</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> 10–14 years</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> 15–20 years</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> 21–30 years</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> 30+ years</label
-					>
-				</div>
+					<div class="mb-px bg-mms-ink2 p-7">
+						<p class="mb-5 flex items-center gap-2">
+							<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
+								>Age statement</span>
+							<span class="h-px flex-1 bg-mms-gold/12"></span>
+						</p>
+						{#each AGE_BUCKETS as bucket (bucket.id)}
+							<label
+								class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
+							>
+								<input
+									type="checkbox"
+									class="accent-mms-gold"
+									checked={selectedAgeBuckets.has(bucket.id)}
+									onchange={() => toggleAgeBucket(bucket.id)}
+								/>
+								{bucket.label}
+							</label>
+						{/each}
+					</div>
 
-				<div class="mb-px bg-mms-ink2 p-7">
-					<p class="mb-5 flex items-center gap-2">
-						<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
-							>Availability</span>
-						<span class="h-px flex-1 bg-mms-gold/12"></span>
-					</p>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> In stock only</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" class="accent-mms-gold" /> Limited editions</label
-					>
-					<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]"
-						><input type="checkbox" checked class="accent-mms-gold" /> All items</label
-					>
-				</div>
+					<div class="mb-px bg-mms-ink2 p-7">
+						<p class="mb-5 flex items-center gap-2">
+							<span class="shrink-0 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim"
+								>Availability</span>
+							<span class="h-px flex-1 bg-mms-gold/12"></span>
+						</p>
+						<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]">
+							<input
+								type="radio"
+								name="collections-availability"
+								value="all"
+								class="accent-mms-gold"
+								bind:group={availabilityMode}
+							/>
+							All items
+						</label>
+						<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]">
+							<input
+								type="radio"
+								name="collections-availability"
+								value="in_stock"
+								class="accent-mms-gold"
+								bind:group={availabilityMode}
+							/>
+							In stock only
+						</label>
+						<label class="flex cursor-pointer select-none items-center gap-3 py-2 text-[0.78rem]">
+							<input
+								type="radio"
+								name="collections-availability"
+								value="limited"
+								class="accent-mms-gold"
+								bind:group={availabilityMode}
+							/>
+							Limited and rare (badge)
+						</label>
+					</div>
 
-				<div class="bg-mms-ink2 p-0 max-lg:col-span-2">
-					<button
-						type="button"
-						class="w-full border-none bg-mms-gold px-4 py-3.5 font-mms-sans text-[0.65rem] font-medium uppercase tracking-[0.2em] text-mms-ink transition hover:bg-mms-gold-light"
-						>Apply filters</button>
+					<div class="bg-mms-ink2 p-0 max-lg:col-span-2">
+						<button
+							type="button"
+							class="w-full border-none bg-mms-gold px-4 py-3.5 font-mms-sans text-[0.65rem] font-medium uppercase tracking-[0.2em] text-mms-ink transition hover:bg-mms-gold-light"
+							onclick={resetSidebarFilters}
+						>
+							Reset filters
+						</button>
+					</div>
 				</div>
 			</aside>
 		</div>

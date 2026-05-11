@@ -25,7 +25,7 @@
 		</p>
 	</div>
 	<div class="{mmsReveal} delay-100">
-		<form class="flex flex-col border border-mms-gold/25 md:flex-row" onsubmit={(e) => e.preventDefault()}>
+		<form class="flex flex-col border border-mms-gold/25 md:flex-row rounded-full overflow-hidden" onsubmit={(e) => e.preventDefault()}>
 			<label class="sr-only" for={emailId}>Email address</label>
 			<input
 				id={emailId}

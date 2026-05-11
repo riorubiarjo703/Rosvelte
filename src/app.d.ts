@@ -21,6 +21,8 @@ declare global {
 			catalogHeroImages?: Record<string, number | null>;
 			/** Published catalogue product id → stock quantity snapshot. */
 			catalogStockQtys?: Record<string, number>;
+			/** Published catalogue (or seed) rows for header search suggestions. */
+			catalogSearchItems?: import('$lib/data/mms-catalog-search').MmsCatalogSearchItem[];
 		}
 		// interface PageState {}
 		// interface Platform {}

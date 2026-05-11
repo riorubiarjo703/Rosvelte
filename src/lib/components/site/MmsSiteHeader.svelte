@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { deLocalizeUrl } from '$lib/paraglide/runtime';
@@ -16,6 +17,7 @@
 	import MmsNavMegaOrigins from './MmsNavMegaOrigins.svelte';
 	import MmsNavMegaEditorial from './MmsNavMegaEditorial.svelte';
 	import MmsMiniCart from '$lib/components/cart/MmsMiniCart.svelte';
+	import MmsSiteSearchField from './MmsSiteSearchField.svelte';
 	import { cartItemCount, syncCartHeroIdsFromCatalog, syncCartStockQtysFromCatalog } from '$lib/cart/mms-cart';
 	import { storeHeaderLogo } from '$lib/store/mms-store-settings';
 
@@ -51,7 +53,12 @@
 	const cartPath = $derived(resolve('/cart'));
 	const accountPath = $derived(resolve('/account'));
 	const accountLoginPath = $derived(resolve('/account/login'));
-	const searchQuery = $derived(searchParams.get('q')?.trim() ?? '');
+	const accountSignupPath = $derived(resolve('/account/signup'));
+	const accountDashboardPath = $derived(`${accountPath}?section=overview`);
+	const accountOrdersPath = $derived(`${accountPath}?section=orders`);
+	const accountWishlistPath = $derived(`${accountPath}?section=wishlist`);
+	const accountSignOutAction = $derived(`${accountPath}?/signOut`);
+	const catalogSearchItems = $derived(page.data.catalogSearchItems ?? []);
 	const searchCat = $derived(searchParams.get('cat')?.trim() ?? '');
 	const searchCountry = $derived(searchParams.get('country')?.trim() ?? '');
 	const searchRegion = $derived(searchParams.get('region')?.trim() ?? '');
@@ -117,8 +124,19 @@
 		return `block py-1.5 text-[0.68rem] uppercase tracking-[0.15em] no-underline ${active ? 'text-mms-gold' : 'text-mms-cream/70 hover:text-mms-gold'}`;
 	}
 
-	const headerIconBox =
-		'inline-flex shrink-0 items-center justify-center border border-mms-gold/35 bg-transparent text-mms-gold transition hover:border-mms-gold/55 hover:bg-mms-gold/[0.06]';
+	const accountMenuWrap =
+		'group/account relative z-[102] flex items-center';
+	const accountMenuPanel =
+		'pointer-events-none invisible absolute right-0 top-full z-[110] min-w-[13rem] pt-2 opacity-0 transition duration-100 group-hover/account:pointer-events-auto group-hover/account:visible group-hover/account:opacity-100 group-focus-within/account:pointer-events-auto group-focus-within/account:visible group-focus-within/account:opacity-100';
+	const accountMenuCard =
+		'rounded-lg border border-mms-gold/30 bg-[#12100c]/98 py-1 shadow-[0_20px_48px_rgba(0,0,0,0.55)] backdrop-blur-md';
+	const accountMenuLink =
+		'flex items-center gap-2.5 px-4 py-2.5 font-mms-sans text-[0.72rem] leading-snug text-mms-cream no-underline transition hover:bg-mms-gold/[0.08] hover:text-mms-gold';
+	const accountMenuBtn =
+		'flex w-full items-center gap-2.5 px-4 py-2.5 font-mms-sans text-[0.72rem] leading-snug text-mms-cream/90 transition hover:bg-red-500/10 hover:text-red-400';
+	const accountMenuIconClass = 'size-[15px] shrink-0 opacity-80';
+	const mobileAccountSubLink =
+		'flex items-center gap-2 py-1.5 text-[0.68rem] uppercase tracking-[0.15em] no-underline text-mms-cream/70 hover:text-mms-gold';
 </script>
 
 {#snippet cartTrigger(className: string)}
@@ -171,6 +189,55 @@
 	</svg>
 {/snippet}
 
+{#snippet accountIconSignIn()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+		<polyline points="10 17 15 12 10 7" />
+		<line x1="15" y1="12" x2="3" y2="12" />
+	</svg>
+{/snippet}
+
+{#snippet accountIconSignUp()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+		<circle cx="9" cy="7" r="4" />
+		<line x1="19" y1="8" x2="19" y2="14" />
+		<line x1="22" y1="11" x2="16" y2="11" />
+	</svg>
+{/snippet}
+
+{#snippet accountIconDashboard()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<rect x="3" y="3" width="7" height="7" rx="1" />
+		<rect x="14" y="3" width="7" height="7" rx="1" />
+		<rect x="14" y="14" width="7" height="7" rx="1" />
+		<rect x="3" y="14" width="7" height="7" rx="1" />
+	</svg>
+{/snippet}
+
+{#snippet accountIconOrders()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+		<path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" />
+		<path d="M9 12h6" />
+		<path d="M9 16h6" />
+	</svg>
+{/snippet}
+
+{#snippet accountIconWishlist()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+	</svg>
+{/snippet}
+
+{#snippet accountIconSignOut()}
+	<svg class={accountMenuIconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+		<polyline points="16 17 21 12 16 7" />
+		<line x1="21" y1="12" x2="9" y2="12" />
+	</svg>
+{/snippet}
+
 <!-- Fixed bar: parent `overflow-x-hidden` breaks `sticky`; spacer reserves the same height in normal flow. -->
 <div>
 	<div class="h-16 shrink-0 md:h-[4.25rem]" aria-hidden="true"></div>
@@ -211,32 +278,14 @@
 	>
 		<!-- Mobile -->
 		<div class="hidden max-md:flex max-md:w-full max-md:flex-col max-md:gap-8">
-			<form method="GET" action={collectionsPath} class="flex items-center gap-2 border border-mms-gold/25 px-2 py-2">
-				<label class="sr-only" for="site-search-mobile">Search products</label>
-				<input
-					id="site-search-mobile"
-					name="q"
-					type="search"
-					placeholder="Search products"
-					value={searchQuery}
-					class="min-w-0 flex-1 border-none bg-transparent px-2 py-1 font-mms-sans text-[0.72rem] text-mms-cream outline-none placeholder:text-mms-muted"
-				/>
-				{#if isCollections && searchCat}
-					<input type="hidden" name="cat" value={searchCat} />
-				{/if}
-				{#if isCollections && searchCountry}
-					<input type="hidden" name="country" value={searchCountry} />
-				{/if}
-				{#if isCollections && searchRegion}
-					<input type="hidden" name="region" value={searchRegion} />
-				{/if}
-				<button
-					type="submit"
-					class="border border-mms-gold/45 px-3 py-1.5 text-[0.62rem] uppercase tracking-[0.16em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
-				>
-					Search
-				</button>
-			</form>
+			<MmsSiteSearchField
+				inputId="site-search-mobile"
+				{collectionsPath}
+				items={catalogSearchItems}
+				submitVariant="text"
+				formClass="flex w-full items-center gap-2 border border-mms-gold/25 px-2 py-2 rounded-full"
+				inputClass="min-w-0 flex-1 border-none bg-transparent px-2 py-1 font-mms-sans text-[0.72rem] text-mms-cream outline-none placeholder:text-mms-muted"
+			/>
 			<div>
 				<p class="mb-2 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim">Collection</p>
 				<a href={collectionsPath} class={mobileLink(isCollections && activeCollectionCat === 'all')} onclick={closeMenu}
@@ -265,64 +314,62 @@
 				class={mobileLink(isCart)}
 				onclick={closeMenu}>Shopping bag</a>
 			{#if sessionUser}
-				<button
-					type="button"
-					class="{headerIconBox} relative size-[2.4rem]"
-					disabled
-					aria-disabled="true"
-					aria-label="Notifications (available soon)"
-				>
-					<svg
-						class="size-[1.125rem]"
-						viewBox="0 0 24 24"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-						stroke="currentColor"
-						stroke-width="1.4"
-						aria-hidden="true"
+				<div class="flex flex-col gap-2 border-b border-mms-gold/10 pb-4">
+					<a
+						href={accountDashboardPath}
+						class="flex max-w-[min(240px,calc(100vw-11rem))] items-center gap-2.5 border border-mms-gold/35 rounded-full text-mms-cream no-underline transition hover:border-mms-gold/55 hover:bg-mms-gold/[0.06] sm:gap-3 sm:px-3 {isAccount
+							? 'border-mms-gold/60 text-mms-gold'
+							: ''}"
+						aria-current={isAccount ? 'page' : undefined}
+						onclick={closeMenu}
 					>
-						<path
-							d="M12 3a5 5 0 00-5 5v3.5L5 17h14l-2-5.5V8a5 5 0 00-5-5z"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-						<path d="M10 21a2 2 0 004 0" stroke-linecap="round" />
-					</svg>
-					<span class="pointer-events-none absolute right-2 top-1.5 size-2 rounded-full bg-red-600" aria-hidden="true"
-					></span>
-				</button>
-				<a
-					href={accountPath}
-					class="flex max-w-[min(240px,calc(100vw-11rem))] items-center gap-2.5 border border-mms-gold/35 px-2.5 py-1.5 text-mms-cream no-underline transition hover:border-mms-gold/55 hover:bg-mms-gold/[0.06] sm:gap-3 sm:px-3 {isAccount
-						? 'border-mms-gold/60 text-mms-gold'
-						: ''}"
-					aria-current={isAccount ? 'page' : undefined}
-					onclick={closeMenu}
-				>
-					<span
-						class="flex size-[2.125rem] shrink-0 items-center justify-center rounded-full border border-mms-gold/40 font-mms-sans text-[0.65rem] font-medium uppercase tracking-wider text-mms-gold"
-					>
-						{customerInitials}
-					</span>
-					<span class="truncate text-left font-mms-sans text-[0.8rem] text-mms-cream">{sessionUser.name}</span>
-				</a>
+						<span
+							class="flex size-[2.125rem] shrink-0 items-center justify-center rounded-full border border-mms-gold/40 font-mms-sans text-[0.65rem] font-medium uppercase tracking-wider text-mms-gold"
+						>
+							{customerInitials}
+						</span>
+						<span class="truncate text-left font-mms-sans text-[0.8rem] text-mms-cream">{sessionUser.name}</span>
+					</a>
+					<div class="flex flex-col gap-1 pl-1">
+						<a href={accountDashboardPath} class={mobileAccountSubLink} onclick={closeMenu}
+							>{@render accountIconDashboard()} My Account</a>
+						<a href={accountOrdersPath} class={mobileAccountSubLink} onclick={closeMenu}
+							>{@render accountIconOrders()} My Orders</a>
+						<a href={accountWishlistPath} class={mobileAccountSubLink} onclick={closeMenu}
+							>{@render accountIconWishlist()} My Wishlist</a>
+						<form method="post" action={accountSignOutAction} use:enhance class="contents">
+							<button
+								type="submit"
+								class="flex w-fit items-center gap-2 py-1.5 text-left text-[0.68rem] uppercase tracking-[0.15em] text-mms-muted transition hover:text-red-400"
+							>
+								{@render accountIconSignOut()}
+								Sign out
+							</button>
+						</form>
+					</div>
+				</div>
 			{:else}
-				<a
-					href={accountLoginPath}
-					class="inline-flex items-center py-1.5 text-mms-cream no-underline transition hover:text-mms-gold {isAccount
-						? 'text-mms-gold'
-						: ''}"
-					aria-current={isAccount ? 'page' : undefined}
-					aria-label="Sign in"
-					onclick={closeMenu}
-				>
-					{@render profileIcon('size-7 shrink-0')}
-				</a>
+				<div class="flex flex-col gap-2 border-b border-mms-gold/10 pb-4">
+					<a
+						href={accountLoginPath}
+						class="inline-flex items-center gap-2 py-1.5 text-mms-cream no-underline transition hover:text-mms-gold {isAccount
+							? 'text-mms-gold'
+							: ''}"
+						aria-current={isAccount ? 'page' : undefined}
+						aria-label="Sign in"
+						onclick={closeMenu}
+					>
+						{@render profileIcon('size-7 shrink-0')}
+						<span class="text-[0.68rem] uppercase tracking-[0.15em]">Account</span>
+					</a>
+					<div class="flex flex-col gap-1 pl-1">
+						<a href={accountLoginPath} class={mobileAccountSubLink} onclick={closeMenu}
+							>{@render accountIconSignIn()} Sign in</a>
+						<a href={accountSignupPath} class={mobileAccountSubLink} onclick={closeMenu}
+							>{@render accountIconSignUp()} Sign up</a>
+					</div>
+				</div>
 			{/if}
-			<a
-				href={reserveHref}
-				class="border border-mms-gold-dim px-5 py-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
-				onclick={closeMenu}>Reserve</a>
 		</div>
 
 		<!-- Desktop: megas open on hover / focus-within only; full-width bridge keeps hover while moving into panel. -->
@@ -400,72 +447,82 @@
 		</div>
 	</div>
 	<div class="hidden shrink-0 items-center gap-2 md:flex md:gap-3 lg:gap-4">
-		<form
-			method="GET"
-			action={collectionsPath}
-			class="relative z-[102] flex items-center gap-2 border border-mms-gold/25 bg-mms-ink/40 px-2 py-1.5"
-		>
-			<label class="sr-only" for="site-search-desktop">Search products</label>
-			<input
-				id="site-search-desktop"
-				name="q"
-				type="search"
-				placeholder="Search products"
-				value={searchQuery}
-				class="w-[9.5rem] border-none bg-transparent px-1 py-1 font-mms-sans text-[0.68rem] tracking-[0.08em] text-mms-cream outline-none placeholder:text-mms-muted lg:w-[11rem]"
+		<div class="relative z-[102]">
+			<MmsSiteSearchField
+				inputId="site-search-desktop"
+				{collectionsPath}
+				items={catalogSearchItems}
+				formClass="flex items-center gap-2 border border-mms-gold/25 bg-mms-ink/40 px-2 rounded-full"
+				inputClass="w-[9.5rem] border-none bg-transparent px-1 py-1 font-mms-sans text-[0.68rem] tracking-[0.08em] text-mms-cream outline-none placeholder:text-mms-muted lg:w-[11rem]"
 			/>
-			{#if isCollections && searchCat}
-				<input type="hidden" name="cat" value={searchCat} />
-			{/if}
-			{#if isCollections && searchCountry}
-				<input type="hidden" name="country" value={searchCountry} />
-			{/if}
-			{#if isCollections && searchRegion}
-				<input type="hidden" name="region" value={searchRegion} />
-			{/if}
-			<button
-				type="submit"
-				class="inline-flex items-center border border-mms-gold/45 px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.18em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
-			>
-				Go
-			</button>
-		</form>
-		<a
-			href={reserveHref}
-			class="border border-mms-gold-dim px-5 py-2 text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
-		>
-			Reserve
-		</a>
+		</div>
 		{#if sessionUser}
 			{@render cartTrigger(
 				'relative z-[102] flex shrink-0 border-none bg-transparent p-1.5 text-mms-cream transition hover:text-mms-gold'
 			)}
-			<a
-				href={accountPath}
-				class="relative z-[102] flex max-w-[11rem] shrink-0 items-center gap-2.5 border border-mms-gold/35 text-mms-cream no-underline transition hover:border-mms-gold/55 hover:bg-mms-gold/[0.06] lg:max-w-[13rem] lg:gap-3 rounded-full pr-4 {isAccount
-					? 'border-mms-gold/60 text-mms-gold'
-					: ''}"
-				aria-current={isAccount ? 'page' : undefined}
-				aria-label="My account"
-			>
-				<span
-					class="flex size-8 shrink-0 items-center justify-center rounded-full border border-mms-gold/40 font-mms-sans text-[0.68rem] font-medium uppercase tracking-wider text-mms-gold"
+			<div class={accountMenuWrap}>
+				<a
+					href={accountDashboardPath}
+					class="relative z-[102] flex max-w-[11rem] shrink-0 items-center gap-2.5 rounded-full border border-mms-gold/35 pr-4 text-mms-cream no-underline transition hover:border-mms-gold/55 hover:bg-mms-gold/[0.06] lg:max-w-[13rem] lg:gap-3 {isAccount
+						? 'border-mms-gold/60 text-mms-gold'
+						: ''}"
+					aria-current={isAccount ? 'page' : undefined}
+					aria-label="My account"
+					aria-haspopup="true"
+					aria-expanded="false"
+					aria-controls="site-account-menu-signed-in"
 				>
-					{customerInitials}
-				</span>
-				<span class="truncate font-mms-sans text-[0.8rem] leading-tight text-mms-cream">{sessionUser.name}</span>
-			</a>
+					<span
+						class="flex size-8 shrink-0 items-center justify-center rounded-full border border-mms-gold/40 font-mms-sans text-[0.68rem] font-medium uppercase tracking-wider text-mms-gold"
+					>
+						{customerInitials}
+					</span>
+					<span class="truncate font-mms-sans text-[0.8rem] leading-tight text-mms-cream capitalize">{sessionUser.name}</span>
+				</a>
+				<div
+					id="site-account-menu-signed-in"
+					class={accountMenuPanel}
+					role="menu"
+					aria-label="Account menu"
+				>
+					<div class={accountMenuCard}>
+						<a href={accountDashboardPath} class={accountMenuLink} role="menuitem"
+							>{@render accountIconDashboard()} My Account</a>
+						<a href={accountOrdersPath} class={accountMenuLink} role="menuitem"
+							>{@render accountIconOrders()} My Orders</a>
+						<a href={accountWishlistPath} class={accountMenuLink} role="menuitem"
+							>{@render accountIconWishlist()} My Wishlist</a>
+						<form method="post" action={accountSignOutAction} use:enhance>
+							<button type="submit" class={accountMenuBtn} role="menuitem"
+								>{@render accountIconSignOut()} Sign out</button>
+						</form>
+					</div>
+				</div>
+			</div>
 		{:else}
-			<a
-				href={accountLoginPath}
-				class="relative z-[102] inline-flex shrink-0 border-none bg-transparent p-1.5 text-mms-cream no-underline transition hover:text-mms-gold {isAccount
-					? 'text-mms-gold'
-					: ''}"
-				aria-current={isAccount ? 'page' : undefined}
-				aria-label="Sign in"
-			>
-				{@render profileIcon('size-6')}
-			</a>
+			<div class={accountMenuWrap}>
+				<a
+					href={accountLoginPath}
+					class="relative z-[102] inline-flex shrink-0 border-none bg-transparent p-1.5 text-mms-cream no-underline transition hover:text-mms-gold {isAccount
+						? 'text-mms-gold'
+						: ''}"
+					aria-current={isAccount ? 'page' : undefined}
+					aria-label="Account"
+					aria-haspopup="true"
+					aria-expanded="false"
+					aria-controls="site-account-menu-guest"
+				>
+					{@render profileIcon('size-6')}
+				</a>
+				<div id="site-account-menu-guest" class={accountMenuPanel} role="menu" aria-label="Account menu">
+					<div class={accountMenuCard}>
+						<a href={accountLoginPath} class={accountMenuLink} role="menuitem"
+							>{@render accountIconSignIn()} Sign in</a>
+						<a href={accountSignupPath} class={accountMenuLink} role="menuitem"
+							>{@render accountIconSignUp()} Sign up</a>
+					</div>
+				</div>
+			</div>
 		{/if}
 	</div>
 	{#if sessionUser}
