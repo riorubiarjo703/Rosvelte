@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Pathname } from '$app/types';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import SuperstoreStatusPill from '$lib/components/superstore/SuperstoreStatusPill.svelte';
-	import SuperstoreIconBtns from '$lib/components/superstore/SuperstoreIconBtns.svelte';
 
 	let { data, form } = $props();
 
@@ -137,13 +137,29 @@
 			<tbody>
 				{#each data.orders as o (o.dbId)}
 					<tr class="border-b border-mms-gold/[0.04] transition-colors hover:bg-mms-gold/[0.06]">
-						<td class="px-6 py-3 font-mms-display text-mms-gold">{o.id}</td>
+						<td class="px-6 py-3 font-mms-display">
+							<a
+								class="text-mms-gold hover:underline"
+								href={resolve('/superstore/orders/[id]', { id: String(o.dbId) })}
+							>{o.id}</a>
+						</td>
 						<td class="px-6 py-3">{o.customer}</td>
 						<td class="px-6 py-3">{o.product}</td>
 						<td class="px-6 py-3 text-mms-muted">{o.date}</td>
 						<td class="px-6 py-3 text-mms-gold">{o.total}</td>
 						<td class="px-6 py-3"><SuperstoreStatusPill status={o.status} variant="order" /></td>
-						<td class="px-6 py-3"><SuperstoreIconBtns /></td>
+						<td class="px-6 py-3">
+							<a
+								href={resolve('/superstore/orders/[id]', { id: String(o.dbId) })}
+								class="inline-flex size-[26px] items-center justify-center rounded border border-mms-gold/10 text-mms-gold transition-colors hover:border-mms-gold"
+								aria-label="View order details"
+							>
+								<svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+									<circle cx="12" cy="12" r="3" />
+								</svg>
+							</a>
+						</td>
 					</tr>
 				{/each}
 			</tbody>

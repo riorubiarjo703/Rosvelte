@@ -9,6 +9,8 @@ export async function createHostedCheckoutInvoice(args: {
 	successRedirectUrl: string;
 	failureRedirectUrl: string;
 	items?: StorefrontOrderLinePayload[];
+	/** When set and non-empty, restricts hosted invoice payment channels (Xendit Invoice API). */
+	paymentMethods?: string[];
 }): Promise<{ invoiceUrl: string; invoiceId: string }> {
 	const client = await getXenditClient();
 	if (!client) throw new Error('Xendit is not configured (no secret API key)');
@@ -31,7 +33,8 @@ export async function createHostedCheckoutInvoice(args: {
 			successRedirectUrl: args.successRedirectUrl,
 			failureRedirectUrl: args.failureRedirectUrl,
 			items,
-			invoiceDuration: 86400
+			invoiceDuration: 86400,
+			...(args.paymentMethods?.length ? { paymentMethods: args.paymentMethods } : {})
 		}
 	});
 

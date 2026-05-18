@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { mmsCollectionProducts } from '$lib/data/mms-collection-products';
 import { customerAuth } from '$lib/server/customer-auth';
+import { listStorefrontOrdersByCustomerEmail } from '$lib/server/orders/repo';
 import { catalogRowToProduct, listPublishedCatalogProducts } from '$lib/server/catalog/repo';
 import { safeInternalPath } from '$lib/server/superstore/redirect';
 import { authActionErrorMessage, isAuthClientError } from '$lib/server/auth-errors';
@@ -27,7 +28,19 @@ export const load: PageServerLoad = async (event) => {
 		/* keep seed curated */
 	}
 
-	return { customer, curated };
+	const ordersRaw = await listStorefrontOrdersByCustomerEmail(customer.email);
+	const orders = ordersRaw.map((o) => ({
+		orderCode: o.orderCode,
+		orderedAt: o.orderedAt.toISOString(),
+		totalIdr: o.totalIdr,
+		productSummary: o.productSummary,
+		paymentStatus: o.paymentStatus,
+		status: o.status,
+		shippingLabel: o.shippingLabel,
+		addressLabel: o.addressLabel
+	}));
+
+	return { customer, curated, orders };
 };
 
 export const actions: Actions = {

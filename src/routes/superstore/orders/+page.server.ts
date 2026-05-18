@@ -37,7 +37,9 @@ export const load: PageServerLoad = async (event) => {
 		const monthStart = startOfThisMonth();
 		const ordersThisMonth = rows.filter((r) => r.orderedAt >= monthStart).length;
 		const totalIdr = rows.reduce((s, r) => s + r.totalIdr, 0);
-		const pending = rows.filter((r) => r.status === 'pending').length;
+		const pending = rows.filter(
+			(r) => r.status === 'pending' || r.paymentStatus === 'pending_payment'
+		).length;
 
 		const orders = rows.map((r) => ({
 			dbId: r.id,

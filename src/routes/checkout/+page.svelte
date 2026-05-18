@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import CollectionBottleArt from '$lib/components/collections/CollectionBottleArt.svelte';
+	import MmsShippingAddressForm from '$lib/components/account/MmsShippingAddressForm.svelte';
 	import {
 		cartLines,
 		cartSubtotal,
@@ -11,9 +13,17 @@
 	import {
 		PROMO_GOLDMEMBER_DISCOUNT_IDR,
 		SHIPPING_COST_MAP,
-		type AddressOption,
+		addressLabel,
 		type ShippingOption
 	} from '$lib/checkout/mms-checkout-pricing';
+	import {
+		customerAddressesStorageKey,
+		formatSavedAddressForCheckout,
+		normalizeAddressBookDefaults,
+		parseCustomerAddressesFromStorageJson,
+		type CustomerSavedAddress
+	} from '$lib/account/customer-address-storage';
+	import { Dialog } from 'bits-ui';
 
 	type PaymentOption = 'card' | 'transfer' | 'ewallet';
 	type BankOption = 'bca' | 'bni' | 'mandiri' | 'bri';
@@ -25,12 +35,29 @@
 	const collectionsPath = resolve('/collections');
 	const catalogHeroImages = $derived(page.data.catalogHeroImages);
 
-	let firstName = $state('Budi');
-	let lastName = $state('Santoso');
-	let email = $state('budi@email.com');
-	let phone = $state('+62 812 3456 7890');
+	let firstName = $state('');
+	let lastName = $state('');
+	let email = $state('');
+	let phone = $state('');
 
-	let selectedAddress = $state<AddressOption>('home');
+	let savedAddresses = $state<CustomerSavedAddress[]>([]);
+	/** `saved:<id>`, `preset:home|office|new`, or `custom` */
+	let selectedAddressKey = $state('preset:home');
+	let otherAddressText = $state('');
+	const CUSTOMER_PHONE_REGEX = /^[+0-9()\-. ]{8,20}$/;
+
+	let newAddressModalOpen = $state(false);
+	let previousAddressKeyForCancel = $state('preset:home');
+	let modalSaveSucceeded = $state(false);
+	let modalLabel = $state('');
+	let modalRecipient = $state('');
+	let modalAddressLine = $state('');
+	let modalCity = $state('');
+	let modalPostal = $state('');
+	let modalPhone = $state('');
+	let modalDefault = $state(false);
+	let modalError = $state('');
+
 	let selectedShipping = $state<ShippingOption>('standard');
 	let selectedPayment = $state<PaymentOption>('card');
 	let selectedBank = $state<BankOption>('bca');
@@ -42,19 +69,60 @@
 
 	const taxRatePercent = $derived(data.taxRatePercent);
 
+	const pm = $derived(data.xenditCheckoutMethods);
+	const enabledPaymentCount = $derived(
+		Number(pm.card) + Number(pm.va) + Number(pm.ewallet)
+	);
+	const showPaymentTabs = $derived(enabledPaymentCount > 1);
+
 	const promoDiscount = $derived(promoApplied ? PROMO_GOLDMEMBER_DISCOUNT_IDR : 0);
 	const shippingCost = $derived(SHIPPING_COST_MAP[selectedShipping]);
 	const discountedSubtotal = $derived(Math.max($cartSubtotal - promoDiscount, 0));
 	const taxAmount = $derived(Math.round((discountedSubtotal * taxRatePercent) / 100));
 	const totalAmount = $derived(discountedSubtotal + taxAmount + shippingCost);
-	const payBlocked = $derived(!data.xenditPaymentEnabled);
+	const payBlocked = $derived(
+		!data.xenditPaymentEnabled || enabledPaymentCount === 0
+	);
+
+	const addressDisplayForSubmit = $derived.by(() => {
+		if (selectedAddressKey.startsWith('saved:')) {
+			const id = selectedAddressKey.slice('saved:'.length);
+			const a = savedAddresses.find((x) => x.id === id);
+			return a ? formatSavedAddressForCheckout(a) : '';
+		}
+		if (selectedAddressKey === 'preset:home') return addressLabel('home');
+		if (selectedAddressKey === 'preset:office') return addressLabel('office');
+		if (selectedAddressKey === 'preset:new' || selectedAddressKey === 'custom') {
+			return otherAddressText.trim();
+		}
+		return '';
+	});
+
+	const addressReady = $derived(addressDisplayForSubmit.trim().length >= 10);
+
 	const checkoutDisabled = $derived(
-		!ageConfirmed || $cartLines.length === 0 || !data.xenditPaymentEnabled
+		!ageConfirmed ||
+			$cartLines.length === 0 ||
+			!data.xenditPaymentEnabled ||
+			enabledPaymentCount === 0 ||
+			!addressReady
 	);
 
 	const cartLinesJson = $derived(
 		JSON.stringify($cartLines.map((l) => ({ productId: l.productId, qty: l.qty })))
 	);
+
+	$effect(() => {
+		const methods = data.xenditCheckoutMethods;
+		const currentOk =
+			(selectedPayment === 'card' && methods.card) ||
+			(selectedPayment === 'transfer' && methods.va) ||
+			(selectedPayment === 'ewallet' && methods.ewallet);
+		if (currentOk) return;
+		if (methods.card) selectedPayment = 'card';
+		else if (methods.va) selectedPayment = 'transfer';
+		else selectedPayment = 'ewallet';
+	});
 
 	function handleCardInput(value: string) {
 		cardNumber = value
@@ -63,6 +131,124 @@
 			.trim()
 			.slice(0, 19);
 	}
+
+	function resetNewAddressModalFields() {
+		modalLabel = '';
+		modalRecipient = `${firstName} ${lastName}`.trim();
+		modalAddressLine = '';
+		modalCity = '';
+		modalPostal = '';
+		modalPhone = phone.trim();
+		modalDefault = false;
+		modalError = '';
+	}
+
+	function openNewAddressModal(kind: 'custom' | 'preset:new') {
+		previousAddressKeyForCancel = selectedAddressKey;
+		modalSaveSucceeded = false;
+		otherAddressText = '';
+		selectedAddressKey = kind;
+		resetNewAddressModalFields();
+		newAddressModalOpen = true;
+	}
+
+	function onNewAddressModalOpenChange(open: boolean) {
+		if (!open) {
+			if (
+				!modalSaveSucceeded &&
+				(selectedAddressKey === 'custom' || selectedAddressKey === 'preset:new')
+			) {
+				selectedAddressKey = previousAddressKeyForCancel;
+			}
+			modalSaveSucceeded = false;
+		}
+		newAddressModalOpen = open;
+	}
+
+	function persistCustomerAddressesForCheckout(book: CustomerSavedAddress[]) {
+		const c = page.data.customer;
+		if (!c?.id || typeof localStorage === 'undefined') return;
+		try {
+			localStorage.setItem(customerAddressesStorageKey(c.id), JSON.stringify(book));
+		} catch {
+			/* ignore */
+		}
+	}
+
+	function saveNewAddressFromModal(e: SubmitEvent) {
+		e.preventDefault();
+		const label = modalLabel.trim();
+		const recipient = modalRecipient.trim();
+		const addressLine = modalAddressLine.trim();
+		const city = modalCity.trim();
+		const postalCode = modalPostal.trim();
+		const ph = modalPhone.trim();
+		const setDefault = modalDefault;
+
+		if (!recipient || !addressLine || !city || !postalCode) {
+			modalError = 'Please complete recipient, address line, city, and postal code.';
+			return;
+		}
+		if (ph && !CUSTOMER_PHONE_REGEX.test(ph)) {
+			modalError =
+				'Phone format is invalid. Use numbers and + ( ) - . and spaces only (8–20 characters).';
+			return;
+		}
+		modalError = '';
+
+		const newEntry: CustomerSavedAddress = {
+			id: `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`,
+			label: label || 'Address',
+			recipient,
+			phone: ph,
+			addressLine,
+			city,
+			postalCode,
+			isDefault: setDefault || savedAddresses.length === 0
+		};
+
+		const c = page.data.customer;
+		if (c?.id) {
+			let book = [...savedAddresses];
+			if (newEntry.isDefault) {
+				book = book.map((entry) => ({ ...entry, isDefault: false }));
+			}
+			book = [...book, { ...newEntry, isDefault: newEntry.isDefault }];
+			if (!book.some((entry) => entry.isDefault)) {
+				book = book.map((entry, index) => ({ ...entry, isDefault: index === 0 }));
+			}
+			savedAddresses = book;
+			persistCustomerAddressesForCheckout(savedAddresses);
+			selectedAddressKey = `saved:${newEntry.id}`;
+			otherAddressText = '';
+		} else {
+			otherAddressText = formatSavedAddressForCheckout(newEntry);
+		}
+
+		modalSaveSucceeded = true;
+		newAddressModalOpen = false;
+	}
+
+	onMount(() => {
+		const c = page.data.customer;
+		if (c) {
+			const parts = c.name.trim().split(/\s+/).filter(Boolean);
+			firstName = parts[0] ?? '';
+			lastName = parts.slice(1).join(' ') || '';
+			email = c.email ?? '';
+			const ph = (c as { phone?: string | null }).phone?.trim();
+			if (ph) phone = ph;
+		}
+		if (c?.id) {
+			const raw = localStorage.getItem(customerAddressesStorageKey(c.id));
+			const book = normalizeAddressBookDefaults(parseCustomerAddressesFromStorageJson(raw));
+			savedAddresses = book;
+			if (book.length > 0) {
+				const def = book.find((a) => a.isDefault) ?? book[0];
+				if (def) selectedAddressKey = `saved:${def.id}`;
+			}
+		}
+	});
 </script>
 
 <svelte:head>
@@ -102,7 +288,11 @@
 		<form method="POST" action="?/checkout" class="checkout-form">
 			{#if payBlocked}
 				<div class="checkout-notice" role="status">
-					Online payment is turned off in store settings. Please contact us to complete your order.
+					{#if !data.xenditPaymentEnabled}
+						Online payment is turned off in store settings. Please contact us to complete your order.
+					{:else}
+						No payment methods are enabled for checkout. Please contact us or try again later.
+					{/if}
 				</div>
 			{/if}
 			{#if form?.error}
@@ -110,7 +300,7 @@
 			{/if}
 			<input type="hidden" name="cartLines" value={cartLinesJson} />
 			<input type="hidden" name="shipping" value={selectedShipping} />
-			<input type="hidden" name="address" value={selectedAddress} />
+			<input type="hidden" name="addressDisplay" value={addressDisplayForSubmit} />
 			<div class="checkout-wrap">
 			<div>
 				<div class="checkout-section">
@@ -168,37 +358,74 @@
 					<span class="section-num">02</span>
 					<h2 class="section-title">Delivery <em>Address</em></h2>
 					<div class="radio-cards">
-						<button
-							type="button"
-							class="radio-card"
-							class:selected={selectedAddress === 'home'}
-							onclick={() => (selectedAddress = 'home')}
-						>
-							<div class="radio-circle"></div>
-							<div class="radio-info">
-								<div class="radio-title">Home - Jl. Kemang Raya No. 45, Jakarta Selatan</div>
-							</div>
-						</button>
-						<button
-							type="button"
-							class="radio-card"
-							class:selected={selectedAddress === 'office'}
-							onclick={() => (selectedAddress = 'office')}
-						>
-							<div class="radio-circle"></div>
-							<div class="radio-info">
-								<div class="radio-title">Office - Menara Sudirman Lt. 12, Jakarta Pusat</div>
-							</div>
-						</button>
-						<button
-							type="button"
-							class="radio-card dashed"
-							class:selected={selectedAddress === 'new'}
-							onclick={() => (selectedAddress = 'new')}
-						>
-							<div class="radio-circle"></div>
-							<div class="radio-info"><div class="radio-sub">Use a different address</div></div>
-						</button>
+						{#if savedAddresses.length > 0}
+							{#each savedAddresses as a (a.id)}
+								<button
+									type="button"
+									class="radio-card radio-card-address"
+									class:selected={selectedAddressKey === `saved:${a.id}`}
+									onclick={() => (selectedAddressKey = `saved:${a.id}`)}
+								>
+									<div class="radio-circle"></div>
+									<div class="radio-info">
+										<div class="radio-title">
+											{a.label}
+											{#if a.isDefault}<span class="address-default-pill">Default</span>{/if}
+										</div>
+										<div class="radio-sub">{a.recipient}</div>
+										<div class="radio-sub">{a.addressLine}</div>
+										<div class="radio-sub">
+											{a.city}
+											{a.postalCode ? ` ${a.postalCode}` : ''}
+											{#if a.phone.trim()}<span> · {a.phone}</span>{/if}
+										</div>
+									</div>
+								</button>
+							{/each}
+							<button
+								type="button"
+								class="radio-card dashed"
+								class:selected={selectedAddressKey === 'custom'}
+								onclick={() => openNewAddressModal('custom')}
+							>
+								<div class="radio-circle"></div>
+								<div class="radio-info">
+									<div class="radio-sub">Use a different address</div>
+								</div>
+							</button>
+						{:else}
+							<button
+								type="button"
+								class="radio-card"
+								class:selected={selectedAddressKey === 'preset:home'}
+								onclick={() => (selectedAddressKey = 'preset:home')}
+							>
+								<div class="radio-circle"></div>
+								<div class="radio-info">
+									<div class="radio-title">Home - Jl. Kemang Raya No. 45, Jakarta Selatan</div>
+								</div>
+							</button>
+							<button
+								type="button"
+								class="radio-card"
+								class:selected={selectedAddressKey === 'preset:office'}
+								onclick={() => (selectedAddressKey = 'preset:office')}
+							>
+								<div class="radio-circle"></div>
+								<div class="radio-info">
+									<div class="radio-title">Office - Menara Sudirman Lt. 12, Jakarta Pusat</div>
+								</div>
+							</button>
+							<button
+								type="button"
+								class="radio-card dashed"
+								class:selected={selectedAddressKey === 'preset:new'}
+								onclick={() => openNewAddressModal('preset:new')}
+							>
+								<div class="radio-circle"></div>
+								<div class="radio-info"><div class="radio-sub">Use a different address</div></div>
+							</button>
+						{/if}
 					</div>
 				</div>
 
@@ -268,174 +495,187 @@
 				<div class="checkout-section">
 					<span class="section-num">04</span>
 					<h2 class="section-title">Payment <em>Method</em></h2>
-					{#if data.xenditPaymentEnabled}
-					<div class="pay-tabs">
-						<button
-							type="button"
-							class="pay-tab"
-							class:active={selectedPayment === 'card'}
-							onclick={() => (selectedPayment = 'card')}
-						>
-							Card
-						</button>
-						<button
-							type="button"
-							class="pay-tab"
-							class:active={selectedPayment === 'transfer'}
-							onclick={() => (selectedPayment = 'transfer')}
-						>
-							Bank Transfer
-						</button>
-						<button
-							type="button"
-							class="pay-tab"
-							class:active={selectedPayment === 'ewallet'}
-							onclick={() => (selectedPayment = 'ewallet')}
-						>
-							E-Wallet
-						</button>
-					</div>
+					{#if data.xenditPaymentEnabled && enabledPaymentCount === 0}
+						<p class="payment-unavailable">
+							Checkout payment types are not configured. Ask the store admin to enable at least one method in
+							superstore payment settings.
+						</p>
+					{:else if data.xenditPaymentEnabled}
+						{#if showPaymentTabs}
+							<div class="pay-tabs">
+								{#if pm.card}
+									<button
+										type="button"
+										class="pay-tab"
+										class:active={selectedPayment === 'card'}
+										onclick={() => (selectedPayment = 'card')}
+									>
+										Card
+									</button>
+								{/if}
+								{#if pm.va}
+									<button
+										type="button"
+										class="pay-tab"
+										class:active={selectedPayment === 'transfer'}
+										onclick={() => (selectedPayment = 'transfer')}
+									>
+										Bank Transfer
+									</button>
+								{/if}
+								{#if pm.ewallet}
+									<button
+										type="button"
+										class="pay-tab"
+										class:active={selectedPayment === 'ewallet'}
+										onclick={() => (selectedPayment = 'ewallet')}
+									>
+										E-Wallet
+									</button>
+								{/if}
+							</div>
+						{/if}
 
-					{#if selectedPayment === 'card'}
-						<div class="form-grid full">
-							<div class="form-group full">
-								<label for="checkout-card-number">Card Number</label>
-								<div class="card-input-wrap">
-									<input
-										id="checkout-card-number"
-										class="form-input w-full"
-										placeholder="1234 5678 9012 3456"
-										value={cardNumber}
-										oninput={(event) => handleCardInput((event.currentTarget as HTMLInputElement).value)}
-									/>
-									<div class="card-icons">
-										<span class="card-icon">VISA</span>
-										<span class="card-icon">MC</span>
+						{#if selectedPayment === 'card' && pm.card}
+							<div class="form-grid full">
+								<div class="form-group full">
+									<label for="checkout-card-number">Card Number</label>
+									<div class="card-input-wrap">
+										<input
+											id="checkout-card-number"
+											class="form-input w-full"
+											placeholder="1234 5678 9012 3456"
+											value={cardNumber}
+											oninput={(event) => handleCardInput((event.currentTarget as HTMLInputElement).value)}
+										/>
+										<div class="card-icons">
+											<span class="card-icon">VISA</span>
+											<span class="card-icon">MC</span>
+										</div>
 									</div>
 								</div>
+								<div class="form-group">
+									<label for="checkout-cardholder">Cardholder Name</label>
+									<input id="checkout-cardholder" class="form-input" />
+								</div>
+								<div class="form-group">
+									<label for="checkout-expiry">Expiry Date</label>
+									<input id="checkout-expiry" class="form-input" placeholder="MM / YY" />
+								</div>
+								<div class="form-group">
+									<label for="checkout-cvv">CVV</label>
+									<input id="checkout-cvv" class="form-input" type="password" />
+								</div>
 							</div>
-							<div class="form-group">
-								<label for="checkout-cardholder">Cardholder Name</label>
-								<input id="checkout-cardholder" class="form-input" />
+						{:else if selectedPayment === 'transfer' && pm.va}
+							<div class="bank-grid">
+								<button
+									type="button"
+									class="bank-card"
+									class:selected={selectedBank === 'bca'}
+									onclick={() => (selectedBank = 'bca')}
+								>
+									<span class="bank-icon">BCA</span>
+									<span class="bank-text">
+										<span class="bank-name">BCA Virtual Account</span>
+										<span class="bank-sub">Instant confirmation</span>
+									</span>
+								</button>
+								<button
+									type="button"
+									class="bank-card"
+									class:selected={selectedBank === 'bni'}
+									onclick={() => (selectedBank = 'bni')}
+								>
+									<span class="bank-icon">BNI</span>
+									<span class="bank-text">
+										<span class="bank-name">BNI Virtual Account</span>
+										<span class="bank-sub">Instant confirmation</span>
+									</span>
+								</button>
+								<button
+									type="button"
+									class="bank-card"
+									class:selected={selectedBank === 'mandiri'}
+									onclick={() => (selectedBank = 'mandiri')}
+								>
+									<span class="bank-icon">MDR</span>
+									<span class="bank-text">
+										<span class="bank-name">Mandiri Bill Payment</span>
+										<span class="bank-sub">Instant confirmation</span>
+									</span>
+								</button>
+								<button
+									type="button"
+									class="bank-card"
+									class:selected={selectedBank === 'bri'}
+									onclick={() => (selectedBank = 'bri')}
+								>
+									<span class="bank-icon">BRI</span>
+									<span class="bank-text">
+										<span class="bank-name">BRI Virtual Account</span>
+										<span class="bank-sub">Instant confirmation</span>
+									</span>
+								</button>
 							</div>
-							<div class="form-group">
-								<label for="checkout-expiry">Expiry Date</label>
-								<input id="checkout-expiry" class="form-input" placeholder="MM / YY" />
+						{:else if selectedPayment === 'ewallet' && pm.ewallet}
+							<div class="ewallet-grid">
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'gopay'}
+									onclick={() => (selectedWallet = 'gopay')}
+								>
+									<span class="wallet-icon">GoPay</span>
+									<span>GoPay</span>
+								</button>
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'ovo'}
+									onclick={() => (selectedWallet = 'ovo')}
+								>
+									<span class="wallet-icon">OVO</span>
+									<span>OVO</span>
+								</button>
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'dana'}
+									onclick={() => (selectedWallet = 'dana')}
+								>
+									<span class="wallet-icon">DANA</span>
+									<span>DANA</span>
+								</button>
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'shopeepay'}
+									onclick={() => (selectedWallet = 'shopeepay')}
+								>
+									<span class="wallet-icon">SP</span>
+									<span>ShopeePay</span>
+								</button>
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'linkaja'}
+									onclick={() => (selectedWallet = 'linkaja')}
+								>
+									<span class="wallet-icon">Link</span>
+									<span>LinkAja</span>
+								</button>
+								<button
+									type="button"
+									class="wallet-card"
+									class:selected={selectedWallet === 'qris'}
+									onclick={() => (selectedWallet = 'qris')}
+								>
+									<span class="wallet-icon">QR</span>
+									<span>QRIS</span>
+								</button>
 							</div>
-							<div class="form-group">
-								<label for="checkout-cvv">CVV</label>
-								<input id="checkout-cvv" class="form-input" type="password" />
-							</div>
-						</div>
-					{:else if selectedPayment === 'transfer'}
-						<div class="bank-grid">
-							<button
-								type="button"
-								class="bank-card"
-								class:selected={selectedBank === 'bca'}
-								onclick={() => (selectedBank = 'bca')}
-							>
-								<span class="bank-icon">BCA</span>
-								<span class="bank-text">
-									<span class="bank-name">BCA Virtual Account</span>
-									<span class="bank-sub">Instant confirmation</span>
-								</span>
-							</button>
-							<button
-								type="button"
-								class="bank-card"
-								class:selected={selectedBank === 'bni'}
-								onclick={() => (selectedBank = 'bni')}
-							>
-								<span class="bank-icon">BNI</span>
-								<span class="bank-text">
-									<span class="bank-name">BNI Virtual Account</span>
-									<span class="bank-sub">Instant confirmation</span>
-								</span>
-							</button>
-							<button
-								type="button"
-								class="bank-card"
-								class:selected={selectedBank === 'mandiri'}
-								onclick={() => (selectedBank = 'mandiri')}
-							>
-								<span class="bank-icon">MDR</span>
-								<span class="bank-text">
-									<span class="bank-name">Mandiri Bill Payment</span>
-									<span class="bank-sub">Instant confirmation</span>
-								</span>
-							</button>
-							<button
-								type="button"
-								class="bank-card"
-								class:selected={selectedBank === 'bri'}
-								onclick={() => (selectedBank = 'bri')}
-							>
-								<span class="bank-icon">BRI</span>
-								<span class="bank-text">
-									<span class="bank-name">BRI Virtual Account</span>
-									<span class="bank-sub">Instant confirmation</span>
-								</span>
-							</button>
-						</div>
-					{:else}
-						<div class="ewallet-grid">
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'gopay'}
-								onclick={() => (selectedWallet = 'gopay')}
-							>
-								<span class="wallet-icon">GoPay</span>
-								<span>GoPay</span>
-							</button>
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'ovo'}
-								onclick={() => (selectedWallet = 'ovo')}
-							>
-								<span class="wallet-icon">OVO</span>
-								<span>OVO</span>
-							</button>
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'dana'}
-								onclick={() => (selectedWallet = 'dana')}
-							>
-								<span class="wallet-icon">DANA</span>
-								<span>DANA</span>
-							</button>
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'shopeepay'}
-								onclick={() => (selectedWallet = 'shopeepay')}
-							>
-								<span class="wallet-icon">SP</span>
-								<span>ShopeePay</span>
-							</button>
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'linkaja'}
-								onclick={() => (selectedWallet = 'linkaja')}
-							>
-								<span class="wallet-icon">Link</span>
-								<span>LinkAja</span>
-							</button>
-							<button
-								type="button"
-								class="wallet-card"
-								class:selected={selectedWallet === 'qris'}
-								onclick={() => (selectedWallet = 'qris')}
-							>
-								<span class="wallet-icon">QR</span>
-								<span>QRIS</span>
-							</button>
-						</div>
-					{/if}
+						{/if}
 					{:else}
 						<p class="payment-unavailable">
 							Hosted Xendit payment is disabled for this store. You can still review your details above; use the
@@ -521,6 +761,45 @@
 			</div>
 		</div>
 		</form>
+
+		<Dialog.Root open={newAddressModalOpen} onOpenChange={onNewAddressModalOpenChange}>
+			<Dialog.Portal>
+				<Dialog.Overlay class="checkout-ship-modal-overlay" />
+				<Dialog.Content class="checkout-ship-modal-content">
+					<Dialog.Title class="checkout-ship-modal-title">New shipping address</Dialog.Title>
+					<Dialog.Description class="checkout-ship-modal-desc">
+						{#if page.data.customer?.id}
+							This address will be used for this order. Saving adds it to your account address book.
+						{:else}
+							Enter your delivery details for this order.
+						{/if}
+					</Dialog.Description>
+					<form class="checkout-ship-modal-form" onsubmit={saveNewAddressFromModal}>
+						<MmsShippingAddressForm
+							variant="checkout"
+							idPrefix="ship-modal"
+							showDefaultCheckbox={!!page.data.customer?.id}
+							showSubmitButton={false}
+							bind:label={modalLabel}
+							bind:recipient={modalRecipient}
+							bind:addressLine={modalAddressLine}
+							bind:city={modalCity}
+							bind:postalCode={modalPostal}
+							bind:phone={modalPhone}
+							bind:setAsDefault={modalDefault}
+							error={modalError}
+						>
+							{#snippet footer()}
+								<div class="checkout-ship-modal-actions">
+									<Dialog.Close type="button" class="btn-checkout-secondary">Cancel</Dialog.Close>
+									<button type="submit" class="btn-checkout-modal-save">Save address</button>
+								</div>
+							{/snippet}
+						</MmsShippingAddressForm>
+					</form>
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
 	{/if}
 </div>
 
@@ -812,6 +1091,38 @@
 	.radio-sub {
 		font-size: 0.64rem;
 		color: var(--muted);
+	}
+
+	.radio-card-address {
+		align-items: flex-start;
+	}
+
+	.radio-card-address .radio-info {
+		min-width: 0;
+	}
+
+	.radio-card-address .radio-title {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
+		line-height: 1.35;
+		word-break: break-word;
+	}
+
+	.radio-card-address .radio-sub {
+		line-height: 1.45;
+		word-break: break-word;
+	}
+
+	.address-default-pill {
+		font-size: 0.52rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		border: 1px solid rgba(201, 168, 76, 0.35);
+		color: var(--gold-dim);
+		padding: 0.15rem 0.35rem;
+		border-radius: 2px;
 	}
 
 	.radio-price {
@@ -1123,6 +1434,91 @@
 	.btn-checkout:disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
+	}
+
+	:global(.checkout-ship-modal-overlay) {
+		position: fixed;
+		inset: 0;
+		z-index: 200;
+		background: rgba(0, 0, 0, 0.72);
+	}
+
+	:global(.checkout-ship-modal-content) {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		z-index: 201;
+		width: min(100% - 2rem, 28rem);
+		max-height: min(90vh, 640px);
+		overflow-y: auto;
+		transform: translate(-50%, -50%);
+		border: 1px solid rgba(201, 168, 76, 0.28);
+		background: #12100c;
+		color: #f5f0e8;
+		padding: 1.5rem 1.35rem 1.4rem;
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.5),
+			0 24px 48px rgba(0, 0, 0, 0.55);
+		outline: none;
+	}
+
+	:global(.checkout-ship-modal-title) {
+		font-family: 'Cormorant Garamond', serif;
+		font-size: 0.62rem;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: #d4b46a;
+		margin: 0;
+	}
+
+	:global(.checkout-ship-modal-desc) {
+		margin: 0.5rem 0 0;
+		font-size: 0.78rem;
+		line-height: 1.45;
+		color: #9a9285;
+	}
+
+	:global(.checkout-ship-modal-form) {
+		margin-top: 1rem;
+	}
+
+	:global(.checkout-ship-modal-actions) {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.65rem;
+		margin-top: 1.25rem;
+		flex-wrap: wrap;
+	}
+
+	:global(.btn-checkout-secondary) {
+		border: 1px solid rgba(201, 168, 76, 0.35);
+		background: #1a1713;
+		color: #f5f0e8;
+		font-size: 0.62rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		padding: 0.65rem 1rem;
+		cursor: pointer;
+	}
+
+	:global(.btn-checkout-secondary:hover) {
+		border-color: rgba(201, 168, 76, 0.5);
+		background: #221e18;
+	}
+
+	:global(.btn-checkout-modal-save) {
+		border: 0;
+		background: #c9a84c;
+		color: #0d0b08;
+		font-size: 0.62rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		padding: 0.65rem 1.15rem;
+		cursor: pointer;
+	}
+
+	:global(.btn-checkout-modal-save:hover) {
+		filter: brightness(1.05);
 	}
 
 	.empty-state {

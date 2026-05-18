@@ -1,4 +1,8 @@
-import { markStorefrontOrderPaidByExternalId, markStorefrontOrderPaymentStatus } from '$lib/server/orders/repo';
+import {
+	getStorefrontOrderByXenditInvoiceId,
+	markStorefrontOrderPaidByExternalId,
+	markStorefrontOrderPaymentStatus
+} from '$lib/server/orders/repo';
 import { resolveXenditWebhookToken } from '$lib/server/superstore/payment-config';
 import { json } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
@@ -27,9 +31,17 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const externalRaw = body.externalId ?? body.external_id;
 	const statusRaw = body.status ?? body.Status;
-	const externalId = typeof externalRaw === 'string' ? externalRaw : null;
-	const status =
-		typeof statusRaw === 'string' ? statusRaw.trim().toUpperCase() : '';
+	let externalId: string | null = typeof externalRaw === 'string' ? externalRaw : null;
+
+	if (!externalId) {
+		const invRaw = body.id ?? body.invoice_id ?? body.invoiceId;
+		if (typeof invRaw === 'string') {
+			const row = await getStorefrontOrderByXenditInvoiceId(invRaw);
+			externalId = row?.xenditExternalId ?? null;
+		}
+	}
+
+	const status = typeof statusRaw === 'string' ? statusRaw.trim().toUpperCase() : '';
 
 	if (!externalId) {
 		return json({ ok: false }, { status: 400 });

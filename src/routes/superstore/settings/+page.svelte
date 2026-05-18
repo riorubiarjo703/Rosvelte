@@ -18,6 +18,18 @@
 	$effect(() => {
 		enableXendit = data.xenditPaymentEnabled;
 	});
+	let xenditModeLocal = $state<'test' | 'production'>('test');
+	$effect(() => {
+		xenditModeLocal = data.xenditMode;
+	});
+	let checkoutCard = $state(true);
+	let checkoutVa = $state(true);
+	let checkoutEwallet = $state(true);
+	$effect(() => {
+		checkoutCard = data.xenditCheckoutMethods.card;
+		checkoutVa = data.xenditCheckoutMethods.va;
+		checkoutEwallet = data.xenditCheckoutMethods.ewallet;
+	});
 	let newOrderAlerts = $state(true);
 	let lowStock = $state(true);
 	let newCustomer = $state(false);
@@ -233,9 +245,10 @@
 			<code class="text-mms-gold/90">.env</code> values are used only as a fallback when nothing is saved here.
 		</p>
 		<p class="mb-5 rounded border border-mms-gold/12 bg-mms-ink3/60 px-4 py-3 text-[0.68rem] leading-relaxed text-mms-muted">
-			<strong class="font-medium text-mms-cream/90">Secrets stay off the wire:</strong> the real API key and webhook token are
-			never loaded into this page. When a value exists in the database you’ll see a bullet mask plus <span
-				class="text-emerald-400/85">— saved</span>, and an optional field below if you want to replace them.
+			<strong class="font-medium text-mms-cream/90">Secrets stay off the wire:</strong> values are never loaded into this page.
+			Use <span class="text-emerald-400/85">— saved</span> and the bullet strip as confirmation. If checkout shows a Xendit
+			permission error, enable <strong class="text-mms-cream/90">Invoice</strong> for your secret key in the Xendit Dashboard
+			(API Keys → permissions)—that is separate from choosing test vs production below.
 		</p>
 
 		{#if form?.paymentSaved}
@@ -268,71 +281,197 @@
 			</label>
 
 			{#if enableXendit}
-			<div class="grid gap-4 md:grid-cols-2">
-				<div class="flex flex-col gap-1">
-					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xsk">
-						Xendit secret API key
-						{#if data.paymentSecrets.hasXenditSecretKey}
-							<span class="text-emerald-400/80"> — saved</span>
-						{/if}
-					</label>
-					{#if data.paymentSecrets.hasXenditSecretKey}
-						<div
-							class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
-							aria-hidden="true"
+			<div class="space-y-4">
+				<div
+					class="flex flex-col gap-3 rounded border border-mms-gold/15 bg-mms-ink3/80 p-4 md:flex-row md:items-start md:justify-between"
+				>
+					<div class="min-w-0 flex-1">
+						<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xmode"
+							>Active checkout environment</label
 						>
-							••••••••••••••••••••••
-						</div>
-					{/if}
-					<input
-						id="xsk"
-						name="xenditSecretKey"
-						type="password"
-						autocomplete="off"
-						class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
-						placeholder={data.paymentSecrets.hasXenditSecretKey
-							? 'Optional: new key to replace the one above'
-							: 'xnd_development_…'}
-					/>
-					{#if data.paymentSecrets.hasXenditSecretKey}
-						<p class="text-[0.6rem] leading-relaxed text-mms-muted">
-							Mask is only a visual placeholder; the real key never leaves the server. Leave the field empty to keep
-							what is stored.
+						<p class="mt-1 text-[0.62rem] leading-relaxed text-mms-muted">
+							Choose which key pair the storefront uses. While developing, keep this on <strong class="text-mms-cream/85"
+								>Test</strong
+							>
+							and use a key starting with <code class="text-mms-gold/85">xnd_development_</code>. For go-live, switch to
+							<strong class="text-mms-cream/85">Production</strong> and
+							<code class="text-mms-gold/85">xnd_production_</code>.
 						</p>
-					{/if}
+					</div>
+					<select
+						id="xmode"
+						name="xenditMode"
+						bind:value={xenditModeLocal}
+						class="w-full shrink-0 border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40 md:w-56"
+					>
+						<option value="test">Test (development)</option>
+						<option value="production">Production (live)</option>
+					</select>
 				</div>
-				<div class="flex flex-col gap-1">
-					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xwh">
-						Webhook verification token
-						{#if data.paymentSecrets.hasWebhookToken}
-							<span class="text-emerald-400/80"> — saved</span>
-						{/if}
+
+				{#if data.paymentSecrets.hasLegacySecretKey}
+					<p class="rounded border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-[0.62rem] leading-relaxed text-mms-muted">
+						A <strong class="text-mms-cream/90">legacy single API key</strong> is still stored. It is only used when the
+						environment-specific key for the active mode above is empty. Use the dropdown to switch mode and save keys for
+						Test or Production separately.
+					</p>
+				{/if}
+
+				{#if xenditModeLocal === 'test'}
+					<div class="max-w-2xl space-y-4 rounded border border-mms-gold/10 bg-mms-ink3/40 p-4">
+						<p class="text-[0.65rem] font-medium tracking-[0.14em] text-mms-gold-dim uppercase">Test (development)</p>
+						<div class="flex flex-col gap-1">
+							<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xsk-test">
+								Secret API key
+								{#if data.paymentSecrets.hasTestSecretKey}
+									<span class="text-emerald-400/80"> — saved</span>
+								{/if}
+							</label>
+							{#if data.paymentSecrets.hasTestSecretKey}
+								<div
+									class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+									aria-hidden="true"
+								>
+									••••••••••••••••••••••
+								</div>
+							{/if}
+							<input
+								id="xsk-test"
+								name="xenditSecretKeyTest"
+								type="password"
+								autocomplete="off"
+								class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+								placeholder={data.paymentSecrets.hasTestSecretKey
+									? 'Optional: new test key'
+									: 'xnd_development_…'}
+							/>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xwh-test">
+								Webhook verification token
+								{#if data.paymentSecrets.hasTestWebhook}
+									<span class="text-emerald-400/80"> — saved</span>
+								{/if}
+							</label>
+							{#if data.paymentSecrets.hasTestWebhook}
+								<div
+									class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+									aria-hidden="true"
+								>
+									••••••••••••••••••••••
+								</div>
+							{/if}
+							<input
+								id="xwh-test"
+								name="xenditWebhookTokenTest"
+								type="password"
+								autocomplete="off"
+								class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+								placeholder={data.paymentSecrets.hasTestWebhook
+									? 'Optional: new test token'
+									: 'Callback token (test dashboard)'}
+							/>
+						</div>
+					</div>
+				{:else}
+					<div class="max-w-2xl space-y-4 rounded border border-mms-gold/10 bg-mms-ink3/40 p-4">
+						<p class="text-[0.65rem] font-medium tracking-[0.14em] text-mms-gold-dim uppercase">Production (live)</p>
+						<div class="flex flex-col gap-1">
+							<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xsk-live">
+								Secret API key
+								{#if data.paymentSecrets.hasLiveSecretKey}
+									<span class="text-emerald-400/80"> — saved</span>
+								{/if}
+							</label>
+							{#if data.paymentSecrets.hasLiveSecretKey}
+								<div
+									class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+									aria-hidden="true"
+								>
+									••••••••••••••••••••••
+								</div>
+							{/if}
+							<input
+								id="xsk-live"
+								name="xenditSecretKeyLive"
+								type="password"
+								autocomplete="off"
+								class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+								placeholder={data.paymentSecrets.hasLiveSecretKey
+									? 'Optional: new live key'
+									: 'xnd_production_…'}
+							/>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="xwh-live">
+								Webhook verification token
+								{#if data.paymentSecrets.hasLiveWebhook}
+									<span class="text-emerald-400/80"> — saved</span>
+								{/if}
+							</label>
+							{#if data.paymentSecrets.hasLiveWebhook}
+								<div
+									class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
+									aria-hidden="true"
+								>
+									••••••••••••••••••••••
+								</div>
+							{/if}
+							<input
+								id="xwh-live"
+								name="xenditWebhookTokenLive"
+								type="password"
+								autocomplete="off"
+								class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
+								placeholder={data.paymentSecrets.hasLiveWebhook
+									? 'Optional: new live token'
+									: 'Callback token (live dashboard)'}
+							/>
+						</div>
+					</div>
+				{/if}
+				
+				<div class="space-y-3 rounded border border-mms-gold/15 bg-mms-ink3/80 p-4">
+					<div class="min-w-0">
+						<p class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase">Checkout payment types</p>
+						<p class="mt-1 text-[0.62rem] leading-relaxed text-mms-muted">
+							Controls which options appear in the storefront checkout payment section. The same set is passed to Xendit
+							for the hosted invoice page.
+						</p>
+					</div>
+					<label class="flex cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							name="xenditCheckoutCard"
+							bind:checked={checkoutCard}
+							class="mt-0.5 size-4 shrink-0 accent-mms-gold"
+						/>
+						<span class="text-[0.72rem] leading-snug text-mms-cream">Card (credit / debit)</span>
 					</label>
-					{#if data.paymentSecrets.hasWebhookToken}
-						<div
-							class="mb-0.5 rounded border border-mms-gold/25 bg-mms-ink3/95 px-4 py-2.5 font-mono text-[0.82rem] tracking-[0.42em] text-mms-gold/55 select-none"
-							aria-hidden="true"
-						>
-							••••••••••••••••••••••
-						</div>
-					{/if}
-					<input
-						id="xwh"
-						name="xenditWebhookToken"
-						type="password"
-						autocomplete="off"
-						class="border border-mms-gold/15 bg-mms-ink3 px-4 py-2.5 text-sm text-mms-cream outline-none focus:border-mms-gold/40"
-						placeholder={data.paymentSecrets.hasWebhookToken
-							? 'Optional: new token to replace the one above'
-							: 'Callback token from Dashboard'}
-					/>
-					{#if data.paymentSecrets.hasWebhookToken}
-						<p class="text-[0.6rem] leading-relaxed text-mms-muted">
-							Same as API key: bullets are not your token—only confirmation that one is saved.
-						</p>
-					{/if}
+					<label class="flex cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							name="xenditCheckoutVa"
+							bind:checked={checkoutVa}
+							class="mt-0.5 size-4 shrink-0 accent-mms-gold"
+						/>
+						<span class="text-[0.72rem] leading-snug text-mms-cream">Bank transfer (virtual account)</span>
+					</label>
+					<label class="flex cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							name="xenditCheckoutEwallet"
+							bind:checked={checkoutEwallet}
+							class="mt-0.5 size-4 shrink-0 accent-mms-gold"
+						/>
+						<span class="text-[0.72rem] leading-snug text-mms-cream">E-wallet (GoPay, OVO, DANA, etc.)</span>
+					</label>
+					<p class="text-[0.6rem] leading-relaxed text-mms-muted">
+						At least one type must stay on while Xendit checkout is enabled.
+					</p>
 				</div>
-				<div class="flex flex-col gap-1 md:col-span-2">
+				
+				<div class="flex flex-col gap-1 md:max-w-xl">
 					<label class="text-[0.6rem] tracking-[0.18em] text-mms-muted uppercase" for="taxsrv">
 						Checkout tax rate (%)
 					</label>
@@ -367,7 +506,8 @@
 		<form method="POST" action="?/clearPaymentSecrets" class="mt-8 border-t border-mms-gold/[0.08] pt-6">
 			<input type="hidden" name="confirmClear" value="true" />
 			<p class="mb-3 text-[0.68rem] text-mms-muted">
-				Remove Xendit keys, webhook token, and saved tax rate from the database (environment fallback still applies if set).
+				Remove all stored Xendit keys (test + production + legacy), webhook tokens, tax rate, and active environment from the
+				database (environment fallback in <code class="text-mms-gold/90">.env</code> still applies if set).
 			</p>
 			<button
 				type="submit"

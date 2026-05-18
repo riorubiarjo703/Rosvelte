@@ -9,9 +9,14 @@
 	import type { MmsWishlistEntry } from '$lib/wishlist/mms-wishlist';
 	import { removeWishlistProduct, wishlistEntries } from '$lib/wishlist/mms-wishlist';
 	import CollectionBottleArt from '$lib/components/collections/CollectionBottleArt.svelte';
+	import MmsShippingAddressForm from '$lib/components/account/MmsShippingAddressForm.svelte';
 	import { catalogHeroImagePublicPath } from '$lib/catalog/hero-image-path';
 	import { resolvedLocalizedHref } from '$lib/paraglide-resolved-href';
 	import { Switch } from 'bits-ui';
+	import {
+		customerAddressesStorageKey,
+		parseCustomerAddressesFromStorageJson
+	} from '$lib/account/customer-address-storage';
 
 	type CustomerUser = User & {
 		birthDate?: string | null;
@@ -37,11 +42,44 @@
 		| 'addresses'
 		| 'profile';
 
+	type CustomerOrderSummary = {
+		orderCode: string;
+		orderedAt: string;
+		totalIdr: number;
+		productSummary: string;
+		paymentStatus: string;
+		status: string;
+		shippingLabel: string;
+		addressLabel: string;
+	};
+
 	let {
 		customer,
 		curated,
+		orders = [],
 		form
-	}: { customer: CustomerUser; curated: MmsCollectionProduct[]; form?: AccountForm | null } = $props();
+	}: {
+		customer: CustomerUser;
+		curated: MmsCollectionProduct[];
+		orders?: CustomerOrderSummary[];
+		form?: AccountForm | null;
+	} = $props();
+
+	function formatOrderWhen(iso: string): string {
+		try {
+			return new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+		} catch {
+			return iso;
+		}
+	}
+
+	function orderPaymentLabel(paymentStatus: string): string {
+		if (paymentStatus === 'paid') return 'Paid';
+		if (paymentStatus === 'pending_payment') return 'Payment pending';
+		if (paymentStatus === 'expired') return 'Expired';
+		if (paymentStatus === 'failed') return 'Failed';
+		return paymentStatus;
+	}
 
 	let activePanel = $state<Panel>('overview');
 	let mobileNavOpen = $state(false);
@@ -186,35 +224,14 @@
 	}
 
 	function addressStorageKey() {
-		return `rosvelte-customer-addresses-${customer.id}`;
+		return customerAddressesStorageKey(customer.id);
 	}
 
 	function loadAddressesFromStorage() {
 		if (typeof localStorage === 'undefined') return;
 		try {
 			const raw = localStorage.getItem(addressStorageKey());
-			if (!raw) {
-				addressBook = [];
-				return;
-			}
-			const parsed = JSON.parse(raw) as CustomerAddress[];
-			if (!Array.isArray(parsed)) {
-				addressBook = [];
-				return;
-			}
-			addressBook = parsed
-				.filter((entry) => entry && typeof entry === 'object')
-				.map((entry) => ({
-					id: String(entry.id || ''),
-					label: String(entry.label || 'Address'),
-					recipient: String(entry.recipient || ''),
-					phone: String(entry.phone || ''),
-					addressLine: String(entry.addressLine || ''),
-					city: String(entry.city || ''),
-					postalCode: String(entry.postalCode || ''),
-					isDefault: Boolean(entry.isDefault)
-				}))
-				.filter((entry) => entry.id && entry.recipient && entry.addressLine && entry.city && entry.postalCode);
+			addressBook = parseCustomerAddressesFromStorageJson(raw);
 			if (addressBook.length > 0 && !addressBook.some((entry) => entry.isDefault)) {
 				addressBook = addressBook.map((entry, index) => ({ ...entry, isDefault: index === 0 }));
 				persistAddresses();
@@ -445,7 +462,7 @@
 				/>
 			</svg>
 			My orders
-			<span class="ml-auto rounded-md bg-red-600/90 px-1.5 py-0.5 text-[0.5rem] font-medium text-white">0</span>
+			<span class="ml-auto rounded-md bg-red-600/90 px-1.5 py-0.5 text-[0.5rem] font-medium text-white">{orders.length}</span>
 		</button>
 		<button type="button" class={navItemClass('wishlist')} onclick={() => setPanel('wishlist')}>
 			<svg class="size-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -544,8 +561,8 @@
 						Your <em class="text-mms-gold-light italic">member</em> benefits are active
 					</h2>
 					<p class="mt-2 text-[0.78rem] font-light leading-relaxed text-mms-muted">
-						Early access to allocations, tasting notes, and journal features ship with checkout. Explore the collection
-						while we finish order history here.
+						Early access to allocations, tasting notes, and journal features ship with checkout. Your purchase history
+						appears under My orders when you use the same email at checkout as on this account.
 					</p>
 				</div>
 				<div class="relative z-[1] text-left md:text-right">
@@ -556,7 +573,7 @@
 			</div>
 
 			<div class="mb-8 grid grid-cols-2 gap-px bg-mms-gold/10 md:grid-cols-4">
-				{#each [{ v: '0', l: 'Orders placed', s: 'All time' }, { v: '0', l: 'Total spent', s: 'Lifetime' }, { v: '0', l: 'Bottles logged', s: 'Tasting journal' }] as stat}
+				{#each [{ v: String(orders.length), l: 'Orders placed', s: 'All time' }, { v: orders.length > 0 ? formatIdr(orders.reduce((s, o) => s + o.totalIdr, 0)) : '—', l: 'Total spent', s: 'Lifetime' }, { v: '0', l: 'Bottles logged', s: 'Tasting journal' }] as stat}
 					<div
 						class="group relative bg-[#1a1713] p-5 transition-colors hover:bg-[#221f1a] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:scale-x-0 before:bg-mms-gold before:opacity-0 before:transition-[opacity,transform] group-hover:before:scale-x-100 group-hover:before:opacity-100"
 					>
@@ -578,16 +595,42 @@
 				Latest order
 			</p>
 			<div class="mb-8 border border-mms-gold/10 bg-[#1a1713] p-6 md:p-8">
-				<p class="text-center font-mms-serif text-lg text-mms-muted">No orders yet</p>
-				<p class="mx-auto mt-2 max-w-sm text-center text-[0.78rem] text-mms-muted/90">
-					When you purchase from Rosvelte, status and tracking will appear here.
-				</p>
-				<a
-					href={resolve('/collections')}
-					class="mx-auto mt-6 flex w-fit border border-mms-gold/40 px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
-				>
-					Browse collection
-				</a>
+				{#if orders.length === 0}
+					<p class="text-center font-mms-serif text-lg text-mms-muted">No orders yet</p>
+					<p class="mx-auto mt-2 max-w-sm text-center text-[0.78rem] text-mms-muted/90">
+						When you purchase from Rosvelte, status and tracking will appear here.
+					</p>
+					<a
+						href={resolve('/collections')}
+						class="mx-auto mt-6 flex w-fit border border-mms-gold/40 px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
+					>
+						Browse collection
+					</a>
+				{:else}
+					<p class="text-center font-mms-serif text-lg text-mms-cream/90">
+						Latest: #{orders[0].orderCode}
+					</p>
+					<p class="mx-auto mt-2 max-w-md text-center text-[0.78rem] text-mms-muted">
+						{formatOrderWhen(orders[0].orderedAt)} · {formatIdr(orders[0].totalIdr)} · {orderPaymentLabel(
+							orders[0].paymentStatus
+						)}
+					</p>
+					<div class="mx-auto mt-6 flex flex-wrap justify-center gap-3">
+						<a
+							href={resolve('/account/orders/[orderCode]', { orderCode: orders[0].orderCode })}
+							class="inline-flex border border-mms-gold/60 px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.2em] text-mms-gold no-underline transition hover:bg-mms-gold hover:text-mms-ink"
+						>
+							View order details
+						</a>
+						<button
+							type="button"
+							class="inline-flex border border-mms-gold/40 px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.2em] text-mms-gold transition hover:bg-mms-gold hover:text-mms-ink"
+							onclick={() => setPanel('orders')}
+						>
+							All orders
+						</button>
+					</div>
+				{/if}
 			</div>
 
 			<p class="mb-4 flex items-center gap-3 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim after:h-px after:flex-1 after:bg-mms-gold/10">
@@ -633,10 +676,51 @@
 				<p class="mb-2 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.25em] text-mms-gold-dim before:block before:h-px before:w-4 before:bg-mms-gold-dim">Purchase history</p>
 				<h1 class="font-mms-display text-3xl font-light text-mms-cream md:text-[2rem]">My <em class="text-mms-gold-light italic">orders</em></h1>
 			</header>
-			<div class="border border-mms-gold/10 bg-[#1a1713] p-10 text-center text-mms-muted">
-				<p class="font-mms-serif text-lg text-mms-cream/90">No orders to show</p>
-				<p class="mt-2 text-sm">Order history will appear here after checkout launches.</p>
-			</div>
+			{#if orders.length === 0}
+				<div class="border border-mms-gold/10 bg-[#1a1713] p-10 text-center text-mms-muted">
+					<p class="font-mms-serif text-lg text-mms-cream/90">No orders to show</p>
+					<p class="mt-2 text-sm">Complete checkout with the same email as this account ({customer.email}) to see orders here.</p>
+				</div>
+			{:else}
+				<div class="overflow-x-auto border border-mms-gold/10 bg-[#1a1713]">
+					<table class="w-full min-w-[42rem] border-collapse text-left text-[0.78rem] text-mms-cream">
+						<thead>
+							<tr class="border-b border-mms-gold/10 bg-mms-gold/[0.04] text-[0.58rem] uppercase tracking-[0.18em] text-mms-muted">
+								<th class="px-4 py-3">Order</th>
+								<th class="px-4 py-3">Date</th>
+								<th class="px-4 py-3">Total</th>
+								<th class="px-4 py-3">Payment</th>
+								<th class="px-4 py-3">Items</th>
+								<th class="px-4 py-3 text-right">Details</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each orders as o (o.orderCode)}
+								<tr class="border-b border-mms-gold/[0.06]">
+									<td class="px-4 py-3 font-mms-display">
+										<a
+											class="text-mms-gold hover:underline"
+											href={resolve('/account/orders/[orderCode]', { orderCode: o.orderCode })}
+											>#{o.orderCode}</a
+										>
+									</td>
+									<td class="px-4 py-3 text-mms-muted">{formatOrderWhen(o.orderedAt)}</td>
+									<td class="px-4 py-3">{formatIdr(o.totalIdr)}</td>
+									<td class="px-4 py-3">{orderPaymentLabel(o.paymentStatus)}</td>
+									<td class="max-w-[12rem] truncate px-4 py-3 text-mms-muted">{o.productSummary}</td>
+									<td class="px-4 py-3 text-right">
+										<a
+											class="text-[0.62rem] uppercase tracking-[0.15em] text-mms-gold hover:underline"
+											href={resolve('/account/orders/[orderCode]', { orderCode: o.orderCode })}
+											>View</a
+										>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
 		{/if}
 
 		{#if activePanel === 'wishlist'}
@@ -793,79 +877,21 @@
 					<p class="mb-4 text-[0.6rem] uppercase tracking-[0.2em] text-mms-gold-dim">
 						{editingAddressId ? 'Edit shipping address' : 'New shipping address'}
 					</p>
-					{#if addressError}
-						<p class="mb-4 text-[0.78rem] text-red-400/95">{addressError}</p>
-					{/if}
-					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<div>
-							<label class={labelClass} for="address-label">Label</label>
-							<input
-								id="address-label"
-								name="addressLabel"
-								class={inputClass}
-								placeholder="Home, Office, etc."
-								bind:value={addressLabelInput}
-							/>
-						</div>
-						<div>
-							<label class={labelClass} for="address-recipient">Recipient name</label>
-							<input
-								id="address-recipient"
-								name="addressRecipient"
-								class={inputClass}
-								required
-								bind:value={addressRecipientInput}
-							/>
-						</div>
-						<div class="md:col-span-2">
-							<label class={labelClass} for="address-line">Address line</label>
-							<textarea
-								id="address-line"
-								name="addressLine"
-								class={inputClass}
-								required
-								rows="3"
-								placeholder="Street, building, district"
-								bind:value={addressLineInput}
-							></textarea>
-						</div>
-						<div>
-							<label class={labelClass} for="address-city">City</label>
-							<input id="address-city" name="addressCity" class={inputClass} required bind:value={addressCityInput} />
-						</div>
-						<div>
-							<label class={labelClass} for="address-postal">Postal code</label>
-							<input
-								id="address-postal"
-								name="addressPostalCode"
-								class={inputClass}
-								required
-								bind:value={addressPostalCodeInput}
-							/>
-						</div>
-						<div class="md:col-span-2">
-							<label class={labelClass} for="address-phone">Phone (optional)</label>
-							<input
-								id="address-phone"
-								name="addressPhone"
-								class={inputClass}
-								type="tel"
-								bind:value={addressPhoneInput}
-							/>
-						</div>
-					</div>
-					<label class="mt-4 inline-flex items-center gap-2 text-[0.72rem] text-mms-muted">
-						<input type="checkbox" name="addressDefault" class="accent-mms-gold" bind:checked={addressDefaultInput} />
-						Set as default address
-					</label>
-					<div class="mt-6 flex justify-end">
-						<button
-							type="submit"
-							class="border border-mms-gold bg-mms-gold px-6 py-2.5 text-[0.62rem] uppercase tracking-[0.18em] text-mms-ink transition hover:bg-mms-gold-light"
-						>
-							{editingAddressId ? 'Update address' : 'Save address'}
-						</button>
-					</div>
+					<MmsShippingAddressForm
+						variant="account"
+						idPrefix="address"
+						showDefaultCheckbox={true}
+						showSubmitButton={true}
+						submitLabel={editingAddressId ? 'Update address' : 'Save address'}
+						bind:label={addressLabelInput}
+						bind:recipient={addressRecipientInput}
+						bind:addressLine={addressLineInput}
+						bind:city={addressCityInput}
+						bind:postalCode={addressPostalCodeInput}
+						bind:phone={addressPhoneInput}
+						bind:setAsDefault={addressDefaultInput}
+						error={addressError}
+					/>
 				</form>
 			{/if}
 

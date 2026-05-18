@@ -1,9 +1,6 @@
 import type { CatalogProductRow } from '$lib/server/catalog/repo';
 import { getCatalogProductById } from '$lib/server/catalog/repo';
-import type {
-	AddressOption,
-	ShippingOption
-} from '$lib/checkout/mms-checkout-pricing';
+import type { ShippingOption } from '$lib/checkout/mms-checkout-pricing';
 import {
 	PROMO_GOLDMEMBER_DISCOUNT_IDR,
 	computeCheckoutTotals
@@ -45,7 +42,6 @@ function normalizeProductId(id: unknown): number | null {
 export async function priceCheckoutCart(args: {
 	rawLines: unknown;
 	shippingOption: ShippingOption;
-	addressOption: AddressOption;
 	promoCodeTrimmed: string;
 	taxRatePercent: number;
 }): Promise<PricedCheckout> {

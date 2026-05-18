@@ -7,6 +7,9 @@
 	let { children } = $props();
 
 	const dashboardHome = $derived(deLocalizeUrl(page.url).pathname.replace(/\/$/, '') === '/account');
+	const wideAccountShell = $derived(
+		dashboardHome || deLocalizeUrl(page.url).pathname.startsWith('/account/orders/')
+	);
 </script>
 
 <svelte:head>
@@ -23,7 +26,7 @@
 >
 	<MmsSiteHeader />
 	<main
-		class="w-full pb-12 pt-12 md:mx-auto md:pb-16 md:pt-12 {dashboardHome
+		class="w-full pb-12 pt-12 md:mx-auto md:pb-16 md:pt-12 {wideAccountShell
 			? 'max-w-[1600px] px-0 md:px-6'
 			: 'max-w-lg px-4 md:px-6'}"
 	>

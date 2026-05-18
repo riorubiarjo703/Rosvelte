@@ -1,9 +1,4 @@
-import {
-	addressLabel,
-	shippingLabel,
-	type AddressOption,
-	type ShippingOption
-} from '$lib/checkout/mms-checkout-pricing';
+import { shippingLabel, type ShippingOption } from '$lib/checkout/mms-checkout-pricing';
 import { priceCheckoutCart } from '$lib/server/checkout/price-checkout-cart';
 import {
 	allocateLiveOrderCode,
@@ -12,17 +7,19 @@ import {
 	updateStorefrontOrderInvoiceMeta
 } from '$lib/server/orders/repo';
 import { createHostedCheckoutInvoice } from '$lib/server/xendit/create-checkout-invoice';
+import { mapXenditCheckoutError } from '$lib/server/xendit/map-xendit-checkout-error';
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import {
 	resolveStoreTaxRatePercent,
-	resolveXenditPaymentEnabled
+	resolveXenditCheckoutMethodFlags,
+	resolveXenditPaymentEnabled,
+	xenditInvoicePaymentMethodsFromFlags
 } from '$lib/server/superstore/payment-config';
 import type { Actions, PageServerLoad } from './$types';
 import { z } from 'zod';
 
 const shippingOptions: ShippingOption[] = ['standard', 'express', 'same', 'free'];
-const addressOptions: AddressOption[] = ['home', 'office', 'new'];
 
 const checkoutSchema = z.object({
 	firstName: z.string().trim().min(1).max(120),
@@ -30,22 +27,36 @@ const checkoutSchema = z.object({
 	email: z.string().trim().email().max(320),
 	phone: z.string().trim().max(40),
 	promoCode: z.string().max(80),
-	cartLines: z.string().min(2)
+	cartLines: z.string().min(2),
+	addressDisplay: z.string().trim().min(10).max(2000)
 });
 
-export const load: PageServerLoad = async () => ({
-	taxRatePercent: await resolveStoreTaxRatePercent(),
-	xenditPaymentEnabled: await resolveXenditPaymentEnabled()
-});
+export const load: PageServerLoad = async () => {
+	const [taxRatePercent, xenditPaymentEnabled, xenditCheckoutMethods] = await Promise.all([
+		resolveStoreTaxRatePercent(),
+		resolveXenditPaymentEnabled(),
+		resolveXenditCheckoutMethodFlags()
+	]);
+	return {
+		taxRatePercent,
+		xenditPaymentEnabled,
+		xenditCheckoutMethods
+	};
+};
 
 export const actions = {
 	checkout: async ({ request, url }) => {
-		const [taxRatePercent, xenditOk] = await Promise.all([
+		const [taxRatePercent, xenditOk, checkoutMethodFlags] = await Promise.all([
 			resolveStoreTaxRatePercent(),
-			resolveXenditPaymentEnabled()
+			resolveXenditPaymentEnabled(),
+			resolveXenditCheckoutMethodFlags()
 		]);
 		if (!xenditOk) {
 			return fail(403, { error: 'Online payment is currently unavailable.' });
+		}
+		const invoicePaymentMethods = xenditInvoicePaymentMethodsFromFlags(checkoutMethodFlags);
+		if (invoicePaymentMethods.length === 0) {
+			return fail(403, { error: 'No payment methods are configured for checkout.' });
 		}
 		const fd = await request.formData();
 		const parsed = checkoutSchema.safeParse({
@@ -54,14 +65,14 @@ export const actions = {
 			email: fd.get('email'),
 			phone: fd.get('phone'),
 			promoCode: fd.get('promoCode') ?? '',
-			cartLines: fd.get('cartLines')
+			cartLines: fd.get('cartLines'),
+			addressDisplay: fd.get('addressDisplay')
 		});
 		if (!parsed.success) {
-			return fail(400, { error: 'Please check your contact details.' });
+			return fail(400, { error: 'Please check your contact details and delivery address.' });
 		}
 
 		const shippingRaw = fd.get('shipping');
-		const addressRaw = fd.get('address');
 		const ageConfirmed = fd.get('ageConfirmed') === 'on' || fd.get('ageConfirmed') === 'true';
 
 		if (!ageConfirmed) {
@@ -71,14 +82,10 @@ export const actions = {
 		if (typeof shippingRaw !== 'string' || !shippingOptions.includes(shippingRaw as ShippingOption)) {
 			return fail(400, { error: 'Invalid shipping option.' });
 		}
-		if (typeof addressRaw !== 'string' || !addressOptions.includes(addressRaw as AddressOption)) {
-			return fail(400, { error: 'Invalid address option.' });
-		}
 
 		const priced = await priceCheckoutCart({
 			rawLines: parsed.data.cartLines,
 			shippingOption: shippingRaw as ShippingOption,
-			addressOption: addressRaw as AddressOption,
 			promoCodeTrimmed: parsed.data.promoCode.trim(),
 			taxRatePercent
 		});
@@ -106,7 +113,7 @@ export const actions = {
 				shippingIdr: priced.shippingIdr,
 				taxIdr: priced.taxIdr,
 				shippingLabel: shippingLabel(shippingRaw as ShippingOption),
-				addressLabel: addressLabel(addressRaw as AddressOption),
+				addressLabel: parsed.data.addressDisplay,
 				linesPayload: priced.lines,
 				xenditExternalId: externalId
 			});
@@ -127,7 +134,8 @@ export const actions = {
 				description: priced.productSummary || `Order ${orderCode}`,
 				successRedirectUrl,
 				failureRedirectUrl,
-				items: priced.lines
+				items: priced.lines,
+				paymentMethods: invoicePaymentMethods
 			});
 			await updateStorefrontOrderInvoiceMeta(orderId, {
 				xenditInvoiceId: inv.invoiceId,
@@ -138,11 +146,7 @@ export const actions = {
 			if (isRedirect(e)) throw e;
 			console.error('[checkout] xendit', e);
 			await deleteStorefrontOrderById(orderId).catch(() => {});
-			const msg =
-				e instanceof Error && e.message.includes('not configured')
-					? 'Payments are not configured on this environment.'
-					: 'Could not start payment. Try again.';
-			return fail(500, { error: msg });
+			return fail(500, { error: mapXenditCheckoutError(e) });
 		}
 	}
 } satisfies Actions;

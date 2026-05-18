@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { storefrontOrder, type StorefrontOrderLinePayload } from '$lib/server/db/schema';
 import type { OrderExportRow } from '$lib/superstore/schemas';
@@ -23,6 +23,22 @@ export async function getStorefrontOrderByCode(
 	return row ?? undefined;
 }
 
+export async function getStorefrontOrderById(id: number): Promise<StorefrontOrderRow | undefined> {
+	const [row] = await db.select().from(storefrontOrder).where(eq(storefrontOrder.id, id)).limit(1);
+	return row ?? undefined;
+}
+
+/** Match checkout email to logged-in customer (case-insensitive). */
+export async function listStorefrontOrdersByCustomerEmail(email: string): Promise<StorefrontOrderRow[]> {
+	const normalized = email.trim().toLowerCase();
+	if (!normalized) return [];
+	return db
+		.select()
+		.from(storefrontOrder)
+		.where(sql`lower(${storefrontOrder.customerEmail}) = ${normalized}`)
+		.orderBy(desc(storefrontOrder.orderedAt), desc(storefrontOrder.id));
+}
+
 /** Unique display code for live checkout (`ORD-` + time + random suffix). */
 export function allocateLiveOrderCode(): string {
 	const suffix = randomBytes(3).toString('hex').toUpperCase();
@@ -40,6 +56,17 @@ export async function getStorefrontOrderByXenditExternalId(
 		.select()
 		.from(storefrontOrder)
 		.where(eq(storefrontOrder.xenditExternalId, externalId))
+		.limit(1);
+	return row ?? undefined;
+}
+
+export async function getStorefrontOrderByXenditInvoiceId(
+	invoiceId: string
+): Promise<StorefrontOrderRow | undefined> {
+	const [row] = await db
+		.select()
+		.from(storefrontOrder)
+		.where(eq(storefrontOrder.xenditInvoiceId, invoiceId))
 		.limit(1);
 	return row ?? undefined;
 }
@@ -109,14 +136,10 @@ export async function markStorefrontOrderPaidByExternalId(externalId: string): P
 		.update(storefrontOrder)
 		.set({
 			paymentStatus: 'paid',
+			status: 'active',
 			updatedAt: now
 		})
-		.where(
-			and(
-				eq(storefrontOrder.xenditExternalId, externalId),
-				eq(storefrontOrder.paymentStatus, 'pending_payment')
-			)
-		)
+		.where(eq(storefrontOrder.xenditExternalId, externalId))
 		.returning({ id: storefrontOrder.id });
 	return result.length > 0;
 }

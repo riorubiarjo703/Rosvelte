@@ -10,5 +10,5 @@
 </svelte:head>
 
 {#if data.customer}
-	<MmsCustomerDashboard customer={data.customer} curated={data.curated} {form} />
+	<MmsCustomerDashboard customer={data.customer} curated={data.curated} orders={data.orders} {form} />
 {/if}

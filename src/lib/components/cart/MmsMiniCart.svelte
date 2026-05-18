@@ -25,10 +25,16 @@
 	} = $props();
 
 	const cartPath = resolve('/cart');
+	const checkoutPath = $derived(resolve('/checkout'));
 
 	function goCart() {
 		onClose();
 		void goto(cartPath);
+	}
+
+	function checkout() {
+		void goto(checkoutPath);
+		onClose();
 	}
 
 	onMount(() => {
@@ -219,9 +225,9 @@
 						<button
 							type="button"
 							class="w-full border border-mms-gold/35 py-3 font-mms-sans text-[0.65rem] uppercase tracking-[0.2em] text-mms-gold transition hover:border-mms-gold hover:bg-mms-gold/10"
-							onclick={onClose}
+							onclick={checkout}
 						>
-							Continue browsing
+							Checkout
 						</button>
 					</div>
 				</footer>
